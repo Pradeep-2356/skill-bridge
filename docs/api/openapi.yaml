@@ -1,0 +1,702 @@
+openapi: 3.1.0
+info:
+  title: SkillBridge API
+  version: 1.0.0-sprint1
+  description: |
+    REST API for SkillBridge (Sprint 1). Every response uses one envelope:
+    `{ "success": true, "data": …, "meta"? }` or `{ "success": false, "error": { "code", "message", "fields"?, "details"? } }`.
+
+    **Authentication** uses two HTTP-only cookies set by login/register:
+    `sb_access` (15-minute JWT, path `/`) and `sb_refresh` (7-day rotating opaque token, path `/api/v1/auth`).
+    Any signed-in endpoint can also return 401 `UNAUTHENTICATED` / `TOKEN_EXPIRED` and 403 `ACCOUNT_DEACTIVATED`.
+    Write requests carrying an `Origin` header from another site are rejected with 403 `CSRF_REJECTED`.
+servers:
+  - url: /api/v1
+tags:
+  - name: Auth
+  - name: Profile
+  - name: Skills
+  - name: Availability
+  - name: Dashboard
+  - name: Search
+  - name: Admin
+  - name: System
+
+components:
+  securitySchemes:
+    accessCookie:
+      type: apiKey
+      in: cookie
+      name: sb_access
+    refreshCookie:
+      type: apiKey
+      in: cookie
+      name: sb_refresh
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema: { type: string, pattern: '^[a-f0-9]{24}$' }
+    EntryId:
+      name: entryId
+      in: path
+      required: true
+      schema: { type: string, pattern: '^[a-f0-9]{24}$' }
+    Page:
+      name: page
+      in: query
+      schema: { type: integer, minimum: 1, default: 1 }
+    Limit:
+      name: limit
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 50, default: 12 }
+  schemas:
+    Error:
+      type: object
+      properties:
+        success: { const: false }
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code: { type: string, example: VALIDATION_ERROR }
+            message: { type: string, example: Please fix the highlighted fields. }
+            fields:
+              type: object
+              additionalProperties: { type: string }
+              example: { email: Enter a valid email address }
+            details: { type: object }
+    PageMeta:
+      type: object
+      properties:
+        page: { type: integer }
+        limit: { type: integer }
+        total: { type: integer }
+        totalPages: { type: integer }
+    Category:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string, example: Web Development }
+        slug: { type: string }
+        icon: { type: string, example: code }
+        description: { type: string }
+    Skill:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string, example: React }
+        status: { type: string, enum: [approved, pending] }
+        category: { $ref: '#/components/schemas/Category' }
+    TeachSkill:
+      type: object
+      properties:
+        id: { type: string }
+        skill: { $ref: '#/components/schemas/Skill' }
+        proficiency: { type: string, enum: [beginner, intermediate, advanced, expert] }
+        yearsExperience: { type: [integer, 'null'] }
+        description: { type: string }
+    LearnSkill:
+      type: object
+      properties:
+        id: { type: string }
+        skill: { $ref: '#/components/schemas/Skill' }
+        preferredLevel: { type: string, enum: [beginner, intermediate, advanced] }
+        goal: { type: string }
+    Slot:
+      type: object
+      required: [day, start, end]
+      properties:
+        day: { type: integer, minimum: 0, maximum: 6, description: '0 = Monday … 6 = Sunday' }
+        start: { type: string, example: '18:00' }
+        end: { type: string, example: '21:00' }
+    PublicProfile:
+      type: object
+      description: The only shape in which another user's data leaves the API (SB1/US46).
+      properties:
+        id: { type: string }
+        name: { type: string }
+        headline: { type: string }
+        bio: { type: string }
+        avatarUrl: { type: [string, 'null'] }
+        timezone: { type: string, example: Asia/Kolkata }
+        learningInterests: { type: array, items: { $ref: '#/components/schemas/Category' } }
+        teachSkills: { type: array, items: { $ref: '#/components/schemas/TeachSkill' } }
+        learnSkills: { type: array, items: { $ref: '#/components/schemas/LearnSkill' } }
+        availability: { type: array, items: { $ref: '#/components/schemas/Slot' } }
+        memberSince: { type: string, format: date-time }
+    PrivateUser:
+      allOf:
+        - $ref: '#/components/schemas/PublicProfile'
+        - type: object
+          properties:
+            email: { type: string, format: email }
+            role: { type: string, enum: [user, admin] }
+            status: { type: string, enum: [active, deactivated] }
+            createdAt: { type: string, format: date-time }
+            updatedAt: { type: string, format: date-time }
+            lastLoginAt: { type: [string, 'null'], format: date-time }
+    UserEnvelope:
+      type: object
+      properties:
+        success: { const: true }
+        data:
+          type: object
+          properties:
+            user: { $ref: '#/components/schemas/PrivateUser' }
+    Session:
+      type: object
+      properties:
+        id: { type: string }
+        startsAt: { type: string, format: date-time }
+        endsAt: { type: string, format: date-time }
+        durationMinutes: { type: integer, example: 30 }
+        status: { type: string, enum: [scheduled, completed, cancelled] }
+        source: { type: string, enum: [demo, match] }
+        role: { type: string, enum: [learner, mentor] }
+        partner:
+          type: [object, 'null']
+          description: null when the other person deleted their account
+          properties:
+            id: { type: string }
+            name: { type: string }
+            headline: { type: string }
+            avatarUrl: { type: [string, 'null'] }
+        skill:
+          type: object
+          properties:
+            id: { type: string }
+            name: { type: string }
+    AdminUserSummary:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        email: { type: string }
+        role: { type: string }
+        status: { type: string }
+        avatarUrl: { type: [string, 'null'] }
+        teachSkillsCount: { type: integer }
+        learnSkillsCount: { type: integer }
+        createdAt: { type: string, format: date-time }
+        lastLoginAt: { type: [string, 'null'], format: date-time }
+  responses:
+    Validation:
+      description: Validation failed (field messages in `error.fields`)
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    Unauthenticated:
+      description: Not logged in, or the session expired
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    Forbidden:
+      description: Not allowed (wrong role, deactivated account, or cross-site request)
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    NotFound:
+      description: Not found
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    Conflict:
+      description: Conflicts with existing data
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    NoContent:
+      description: Done, no body
+
+security:
+  - accessCookie: []
+
+paths:
+  /health:
+    get:
+      tags: [System]
+      summary: Health check (API + database)
+      security: []
+      responses:
+        '200': { description: '{ status: "ok", db: "up" }' }
+        '503': { description: Database unavailable }
+
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Create an account and sign in (SB1/US1, US2, US8, US9, US14)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, password, confirmPassword]
+              properties:
+                name: { type: string, minLength: 2, maxLength: 80 }
+                email: { type: string, format: email }
+                password:
+                  {
+                    type: string,
+                    description: '8–72 chars with upper, lower, number and symbol; must not contain the email name part',
+                  }
+                confirmPassword: { type: string }
+                timezone: { type: string, example: Asia/Kolkata }
+      responses:
+        '201':
+          {
+            description: Created; sets sb_access and sb_refresh cookies,
+            content: { application/json: { schema: { $ref: '#/components/schemas/UserEnvelope' } } },
+          }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/Validation' }
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Log in (SB1/US3); `reactivate` revives a self-deactivated account (SB1/US32)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string }
+                reactivate: { type: boolean }
+      responses:
+        '200':
+          {
+            description: Signed in; cookies set,
+            content: { application/json: { schema: { $ref: '#/components/schemas/UserEnvelope' } } },
+          }
+        '401': { description: INVALID_CREDENTIALS – same message for unknown email and wrong password }
+        '403': { description: 'ACCOUNT_DEACTIVATED with details.canReactivate' }
+        '422': { $ref: '#/components/responses/Validation' }
+
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Swap the refresh token for a new access + refresh pair (SB1/US10, US12)
+      security: [{ refreshCookie: [] }]
+      responses:
+        '200':
+          {
+            description: New cookies set,
+            content: { application/json: { schema: { $ref: '#/components/schemas/UserEnvelope' } } },
+          }
+        '401': { description: Missing, expired, revoked or reused token (reuse revokes the whole login) }
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Revoke the refresh token and clear cookies (SB1/US4)
+      security: []
+      responses:
+        '204': { $ref: '#/components/responses/NoContent' }
+
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: The signed-in user (SB1/US10, US11, US13)
+      responses:
+        '200':
+          { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/UserEnvelope' } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+
+  /auth/forgot-password:
+    post:
+      tags: [Auth]
+      summary: Email a single-use reset link (SB1/US5)
+      security: []
+      requestBody:
+        required: true
+        content:
+          {
+            application/json:
+              { schema: { type: object, required: [email], properties: { email: { type: string, format: email } } } },
+          }
+      responses:
+        '202': { description: Always the same answer, whether or not the email exists }
+        '422': { $ref: '#/components/responses/Validation' }
+
+  /auth/reset-password:
+    post:
+      tags: [Auth]
+      summary: Set a new password from the emailed link (SB1/US6)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, password, confirmPassword]
+              properties:
+                token: { type: string }
+                password: { type: string }
+                confirmPassword: { type: string }
+      responses:
+        '200': { description: Password updated; every session revoked }
+        '400': { description: RESET_TOKEN_INVALID – expired, used or unknown }
+        '422': { $ref: '#/components/responses/Validation' }
+
+  /auth/password:
+    patch:
+      tags: [Auth]
+      summary: Change password (SB1/US7)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [currentPassword, newPassword, confirmPassword]
+              properties:
+                currentPassword: { type: string }
+                newPassword: { type: string }
+                confirmPassword: { type: string }
+      responses:
+        '200': { description: Changed; other devices signed out, this one gets new cookies }
+        '422': { description: Field errors, including `currentPassword` when it is wrong }
+
+  /users/me:
+    get:
+      tags: [Profile]
+      summary: My full profile (SB1/US30)
+      responses:
+        '200':
+          { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/UserEnvelope' } } } }
+    patch:
+      tags: [Profile]
+      summary: Update name, headline, bio, time zone, interests (SB1/US16, US18, US19, US29)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              minProperties: 1
+              properties:
+                name: { type: string, minLength: 2, maxLength: 80 }
+                headline: { type: string, maxLength: 120 }
+                bio: { type: string, maxLength: 1000 }
+                timezone: { type: string }
+                learningInterests: { type: array, maxItems: 10, items: { type: string } }
+      responses:
+        '200':
+          {
+            description: Updated,
+            content: { application/json: { schema: { $ref: '#/components/schemas/UserEnvelope' } } },
+          }
+        '422': { $ref: '#/components/responses/Validation' }
+    delete:
+      tags: [Profile]
+      summary: Permanently delete my account (SB1/US33, US34)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [password, confirmText]
+              properties:
+                password: { type: string }
+                confirmText: { const: DELETE }
+      responses:
+        '204': { $ref: '#/components/responses/NoContent' }
+        '409': { description: LAST_ADMIN – the only active admin cannot delete their account }
+        '422': { $ref: '#/components/responses/Validation' }
+
+  /users/me/avatar:
+    put:
+      tags: [Profile]
+      summary: Upload a profile photo (SB1/US17)
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [avatar]
+              properties:
+                avatar:
+                  {
+                    type: string,
+                    format: binary,
+                    description: 'JPEG, PNG or WebP, max 2 MB; checked by file signature',
+                  }
+      responses:
+        '200': { description: '{ avatarUrl }' }
+        '413': { description: FILE_TOO_LARGE }
+        '415': { description: UNSUPPORTED_FILE_TYPE }
+    delete:
+      tags: [Profile]
+      summary: Remove my profile photo
+      responses:
+        '200': { description: '{ avatarUrl: null }' }
+
+  /users/me/preview:
+    get:
+      tags: [Profile]
+      summary: My profile exactly as others see it (SB1/US31)
+      responses:
+        '200': { description: '{ profile: PublicProfile }' }
+
+  /users/me/deactivate:
+    post:
+      tags: [Profile]
+      summary: Deactivate my account (SB1/US32)
+      requestBody:
+        required: true
+        content:
+          {
+            application/json:
+              { schema: { type: object, required: [password], properties: { password: { type: string } } } },
+          }
+      responses:
+        '200': { description: Deactivated; cookies cleared }
+        '422': { $ref: '#/components/responses/Validation' }
+
+  /users/{id}:
+    get:
+      tags: [Profile]
+      summary: Another member's public profile (SB1/US46)
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200': { description: '{ profile: PublicProfile }' }
+        '404': { description: Missing or deactivated }
+        '422': { description: Malformed id }
+
+  /categories:
+    get:
+      tags: [Skills]
+      summary: Active skill categories (SB1/US19)
+      responses:
+        '200': { description: '{ categories: Category[] }' }
+
+  /skills:
+    get:
+      tags: [Skills]
+      summary: Catalogue lookup for the skill picker (SB1/US20–22)
+      parameters:
+        - { name: q, in: query, schema: { type: string, maxLength: 60 } }
+        - { name: category, in: query, schema: { type: string } }
+        - { name: limit, in: query, schema: { type: integer, maximum: 50, default: 20 } }
+      responses:
+        '200': { description: '{ skills: Skill[] } – approved skills plus my own pending ones; prefix matches first' }
+
+  /users/me/skills:
+    get:
+      tags: [Skills]
+      summary: My teach and learn lists (SB1/US36)
+      responses:
+        '200': { description: '{ teachSkills: TeachSkill[], learnSkills: LearnSkill[] }' }
+
+  /users/me/teach-skills:
+    post:
+      tags: [Skills]
+      summary: Add a skill I can teach (SB1/US20, US21, US25)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [proficiency]
+              description: Send `skillId`, or `customName` + `categoryId` for a new (pending) skill.
+              properties:
+                skillId: { type: string }
+                customName: { type: string, minLength: 2, maxLength: 60 }
+                categoryId: { type: string }
+                proficiency: { type: string, enum: [beginner, intermediate, advanced, expert] }
+                yearsExperience: { type: integer, minimum: 0, maximum: 50 }
+                description: { type: string, maxLength: 300 }
+      responses:
+        '201': { description: '{ entry: TeachSkill }' }
+        '409': { description: SKILL_ALREADY_ADDED }
+        '422': { description: Validation, or the 20-skill limit (`fields._form`) }
+
+  /users/me/teach-skills/{entryId}:
+    parameters: [{ $ref: '#/components/parameters/EntryId' }]
+    patch:
+      tags: [Skills]
+      summary: Edit a teaching skill (SB1/US24, US25)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              minProperties: 1
+              properties:
+                proficiency: { type: string, enum: [beginner, intermediate, advanced, expert] }
+                yearsExperience: { type: integer }
+                description: { type: string }
+      responses:
+        '200': { description: '{ entry: TeachSkill }' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [Skills]
+      summary: Remove a teaching skill (SB1/US23)
+      responses:
+        '204': { $ref: '#/components/responses/NoContent' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /users/me/learn-skills:
+    post:
+      tags: [Skills]
+      summary: Add a skill I want to learn (SB1/US22, US26)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [preferredLevel]
+              properties:
+                skillId: { type: string }
+                customName: { type: string }
+                categoryId: { type: string }
+                preferredLevel: { type: string, enum: [beginner, intermediate, advanced] }
+                goal: { type: string, maxLength: 300 }
+      responses:
+        '201': { description: '{ entry: LearnSkill }' }
+        '409': { description: SKILL_ALREADY_ADDED }
+        '422': { $ref: '#/components/responses/Validation' }
+
+  /users/me/learn-skills/{entryId}:
+    parameters: [{ $ref: '#/components/parameters/EntryId' }]
+    patch:
+      tags: [Skills]
+      summary: Edit a learning skill (SB1/US24, US26)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              minProperties: 1
+              properties:
+                preferredLevel: { type: string, enum: [beginner, intermediate, advanced] }
+                goal: { type: string }
+      responses:
+        '200': { description: '{ entry: LearnSkill }' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [Skills]
+      summary: Remove a learning skill (SB1/US23)
+      responses:
+        '204': { $ref: '#/components/responses/NoContent' }
+
+  /users/me/availability:
+    get:
+      tags: [Availability]
+      summary: My weekly availability and time zone (SB1/US27–29)
+      responses:
+        '200': { description: '{ timezone, slots: Slot[] }' }
+    put:
+      tags: [Availability]
+      summary: Replace my weekly availability (SB1/US27–29)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [timezone, slots]
+              properties:
+                timezone: { type: string }
+                slots: { type: array, maxItems: 21, items: { $ref: '#/components/schemas/Slot' } }
+      responses:
+        '200': { description: Saved (sorted by day and time) }
+        '422': { description: 'Overlapping ranges (`slots.N.start`), off-step times or an unknown zone' }
+
+  /dashboard:
+    get:
+      tags: [Dashboard]
+      summary: Everything the dashboard shows, in one call (SB1/US35–38)
+      responses:
+        '200':
+          description: '{ user, profileCompletion { percent, completed, total, items[] }, skills { teach, learn }, upcomingSessions[], recentActivity[], counts }'
+
+  /sessions:
+    get:
+      tags: [Dashboard]
+      summary: My sessions (SB1/US37–39)
+      parameters:
+        - { name: scope, in: query, schema: { type: string, enum: [upcoming, past], default: upcoming } }
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/Limit' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    {
+                      type: object,
+                      properties: { sessions: { type: array, items: { $ref: '#/components/schemas/Session' } } },
+                    }
+                  meta: { $ref: '#/components/schemas/PageMeta' }
+
+  /search/mentors:
+    get:
+      tags: [Search]
+      summary: Keyword skill search for mentors (SB1/US50)
+      description: Case-insensitive, literal match on skill names and aliases. Excludes the caller and deactivated users.
+      parameters:
+        - { name: q, in: query, required: true, schema: { type: string, minLength: 1, maxLength: 60 } }
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/Limit' }
+      responses:
+        '200':
+          {
+            description: '{ mentors: [{ id, name, headline, avatarUrl, timezone, matchedSkills[], otherSkills[], teachSkillsCount, availabilitySlots }] } + meta { page, limit, total, totalPages, query }',
+          }
+        '422': { $ref: '#/components/responses/Validation' }
+
+  /admin/users:
+    get:
+      tags: [Admin]
+      summary: List users (SB1/US47) – admins only
+      parameters:
+        - { name: q, in: query, schema: { type: string }, description: name or email }
+        - { name: status, in: query, schema: { type: string, enum: [active, deactivated] } }
+        - { name: role, in: query, schema: { type: string, enum: [user, admin] } }
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/Limit' }
+      responses:
+        '200': { description: '{ users: AdminUserSummary[] } + meta (with totals.active / totals.deactivated)' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /admin/users/{id}:
+    get:
+      tags: [Admin]
+      summary: User details for troubleshooting (SB1/US49)
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200':
+          {
+            description: '{ user } – summary + headline, bio, timezone, deactivation, skills, availabilitySlots, sessionsCount',
+          }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /admin/users/{id}/status:
+    patch:
+      tags: [Admin]
+      summary: Deactivate or reactivate an account (SB1/US48)
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { type: string, enum: [active, deactivated] }
+                reason: { type: string, minLength: 5, maxLength: 300, description: required when deactivating }
+      responses:
+        '200': { description: '{ user } – deactivation signs the user out everywhere' }
+        '400': { description: CANNOT_DEACTIVATE_SELF }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/Validation' }
