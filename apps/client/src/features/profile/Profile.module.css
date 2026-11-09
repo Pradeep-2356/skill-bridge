@@ -1,0 +1,227 @@
+.layout {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.hero {
+  display: flex;
+  gap: var(--space-6);
+  align-items: center;
+  padding: var(--space-6);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background:
+    linear-gradient(120deg, rgb(238 242 255 / 0.9), rgb(240 253 250 / 0.6) 60%, rgb(255 251 235 / 0.6)),
+    var(--color-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.heroText {
+  flex: 1;
+  min-width: 0;
+}
+
+.name {
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-bold);
+}
+
+.headline {
+  margin-top: var(--space-1);
+  color: var(--color-text-secondary);
+  font-size: var(--text-lg);
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
+  margin-top: var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+.meta li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.heroBadges {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.heroActions {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  align-self: flex-start;
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+  gap: var(--space-6);
+  align-items: start;
+}
+
+.main,
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  min-width: 0;
+}
+
+.bio {
+  white-space: pre-line;
+  color: var(--color-text);
+}
+
+.missing {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  font-style: italic;
+}
+
+.skillList {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.skillItem {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+
+.skillMeta {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+.skillText {
+  flex-basis: 100%;
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+.interests {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.interest {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  background: var(--color-primary-tint);
+  color: var(--color-primary-active);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+}
+
+.avatarUploader {
+  display: flex;
+  gap: var(--space-5);
+  align-items: center;
+}
+
+.avatarTitle {
+  font-weight: var(--weight-semibold);
+  font-size: var(--text-sm);
+}
+
+.avatarHint {
+  margin-top: 2px;
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.avatarActions {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.avatarError {
+  margin-top: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--color-danger);
+}
+
+.interestFieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.interestLegend {
+  padding: 0;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+}
+
+.interestGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.interestToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-secondary);
+}
+
+.interestToggle:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.interestToggle:disabled {
+  opacity: 0.45;
+}
+
+.interestOn,
+.interestOn:hover:not(:disabled) {
+  background: var(--color-primary-tint);
+  border-color: var(--color-primary);
+  color: var(--color-primary-active);
+}
+
+@media (max-width: 1023px) {
+  .columns {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 639px) {
+  .hero {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: var(--space-5);
+  }
+
+  .avatarUploader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
