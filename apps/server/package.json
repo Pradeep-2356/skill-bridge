@@ -1,0 +1,36 @@
+{
+  "name": "@skillbridge/server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "SkillBridge REST API (Express 5 + Mongoose)",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "dev": "node --watch-path=src --watch-path=../../packages/shared/src src/server.js",
+    "start": "node src/server.js",
+    "test:unit": "vitest run --project unit",
+    "test:integration": "vitest run --project integration",
+    "test:coverage": "vitest run --coverage"
+  },
+  "dependencies": {
+    "@skillbridge/shared": "*",
+    "bcryptjs": "^3.0.3",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
+    "express": "^5.3.0",
+    "helmet": "^8.3.0",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.12.0",
+    "multer": "^2.5.0",
+    "nodemailer": "^10.4.0",
+    "swagger-ui-express": "^5.0.1",
+    "yaml": "^2.9.1",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "^5.1.0",
+    "mongodb-memory-server": "^11.3.0",
+    "supertest": "^7.3.2",
+    "vitest": "^5.1.0"
+  }
+}

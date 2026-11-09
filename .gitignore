@@ -1,0 +1,29 @@
+# dependencies
+node_modules/
+
+# environment and secrets
+.env
+.env.*
+!.env.example
+certs/
+
+# build output
+apps/client/dist/
+coverage/
+*.lcov
+
+# uploaded files (profile photos)
+apps/server/uploads/
+
+# test artefacts
+playwright-report/
+test-results/
+e2e/.auth/
+
+# editors and OS
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.log
+npm-debug.log*

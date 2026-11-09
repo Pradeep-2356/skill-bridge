@@ -1,0 +1,116 @@
+/*
+ * SkillBridge design tokens (Stage 3, "UI/UX design system").
+ * Components use ONLY these variables, which keeps every screen consistent (SB1/US44).
+ * Teaching is always teal; learning is always amber.
+ */
+:root {
+  /* Brand */
+  --color-primary: #4f46e5;
+  --color-primary-hover: #4338ca;
+  --color-primary-active: #3730a3;
+  --color-primary-tint: #eef2ff;
+  --color-primary-border: #c7d2fe;
+
+  /* Meaning colours */
+  --color-teach: #0f766e;
+  --color-teach-border: #14b8a6;
+  --color-teach-tint: #f0fdfa;
+  --color-learn: #b45309;
+  --color-learn-border: #f59e0b;
+  --color-learn-tint: #fffbeb;
+
+  /* Neutrals (slate) */
+  --color-bg: #f8fafc;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f1f5f9;
+  --color-border: #e2e8f0;
+  --color-border-strong: #cbd5e1;
+  --color-text: #0f172a;
+  --color-text-secondary: #475569;
+  --color-text-muted: #64748b;
+  --color-text-inverse: #ffffff;
+
+  /* Feedback */
+  --color-success: #15803d;
+  --color-success-tint: #f0fdf4;
+  --color-danger: #b91c1c;
+  --color-danger-hover: #991b1b;
+  --color-danger-tint: #fef2f2;
+  --color-warning: #c2410c;
+  --color-warning-tint: #fff7ed;
+  --color-info: #4f46e5;
+  --color-info-tint: #eef2ff;
+  --color-pending: #0369a1;
+  --color-pending-tint: #f0f9ff;
+
+  /* Typography */
+  --font-sans: 'Inter Variable', Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  --text-xs: 0.75rem; /* 12 */
+  --text-sm: 0.875rem; /* 14 */
+  --text-md: 1rem; /* 16 */
+  --text-lg: 1.125rem; /* 18 */
+  --text-xl: 1.25rem; /* 20 */
+  --text-2xl: 1.5rem; /* 24 */
+  --text-3xl: 1.875rem; /* 30 */
+  --text-4xl: 2.25rem; /* 36 */
+  --leading-body: 1.5;
+  --leading-tight: 1.25;
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  /* Spacing (4 px base) */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+
+  /* Shape and depth */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 999px;
+  --shadow-sm: 0 1px 2px rgb(15 23 42 / 0.06);
+  --shadow-md: 0 4px 12px rgb(15 23 42 / 0.08);
+  --shadow-lg: 0 16px 40px rgb(15 23 42 / 0.16);
+  --focus-ring: 0 0 0 2px var(--color-surface), 0 0 0 4px var(--color-primary);
+
+  /* Layout */
+  --sidebar-width: 248px;
+  --sidebar-collapsed: 72px;
+  --topbar-height: 64px;
+  --content-max: 1200px;
+  --page-padding: var(--space-8);
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --duration-fast: 150ms;
+  --duration-base: 200ms;
+
+  --z-sticky: 20;
+  --z-drawer: 40;
+  --z-modal: 50;
+  --z-toast: 60;
+}
+
+@media (max-width: 767px) {
+  :root {
+    --page-padding: var(--space-4);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0ms;
+    --duration-base: 0ms;
+  }
+}

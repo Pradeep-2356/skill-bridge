@@ -1,0 +1,109 @@
+.shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: minmax(360px, 5fr) 7fr;
+  background: var(--color-surface);
+}
+
+.brand {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: var(--space-8);
+  padding: var(--space-10);
+  overflow: hidden;
+  color: var(--color-text-inverse);
+  background:
+    radial-gradient(circle at 85% 15%, rgb(20 184 166 / 0.35), transparent 40%),
+    radial-gradient(circle at 10% 90%, rgb(245 158 11 / 0.3), transparent 45%),
+    linear-gradient(160deg, #4338ca, #312e81);
+}
+
+.pitch {
+  max-width: 420px;
+}
+
+.pitchTitle {
+  font-size: var(--text-3xl);
+  font-weight: var(--weight-bold);
+  letter-spacing: -0.02em;
+}
+
+.pitchText {
+  margin-top: var(--space-4);
+  color: rgb(255 255 255 / 0.82);
+}
+
+.points {
+  display: grid;
+  gap: var(--space-3);
+  margin-top: var(--space-6);
+}
+
+.points li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-weight: var(--weight-medium);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.chips span {
+  padding: 6px 12px;
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+}
+
+.teach {
+  background: rgb(240 253 250 / 0.95);
+  color: var(--color-teach);
+}
+
+.learn {
+  background: rgb(255 251 235 / 0.95);
+  color: var(--color-learn);
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-10) var(--space-6);
+}
+
+.panel {
+  width: 100%;
+  max-width: 440px;
+}
+
+.mobileLogo {
+  display: none;
+  margin-bottom: var(--space-8);
+}
+
+@media (max-width: 899px) {
+  .shell {
+    grid-template-columns: 1fr;
+  }
+
+  .brand {
+    display: none;
+  }
+
+  .mobileLogo {
+    display: block;
+  }
+
+  .main {
+    justify-content: flex-start;
+    padding-top: var(--space-8);
+  }
+}

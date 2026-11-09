@@ -1,0 +1,20 @@
+{
+  "name": "@skillbridge/shared",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Constants and Zod validation schemas shared by the SkillBridge client and server",
+  "type": "module",
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "scripts": {
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "vitest": "^5.1.0"
+  }
+}
