@@ -286,12 +286,18 @@
     z-index: var(--z-drawer);
     width: min(280px, 85vw);
     transform: translateX(-100%);
-    transition: transform var(--duration-base) var(--ease-out);
-    box-shadow: var(--shadow-lg);
+    /* Hidden drawer: invisible and out of the tab order until opened. */
+    visibility: hidden;
+    transition:
+      transform var(--duration-base) var(--ease-out),
+      visibility 0s linear var(--duration-base);
   }
 
   .sidebarOpen {
     transform: translateX(0);
+    visibility: visible;
+    box-shadow: var(--shadow-lg);
+    transition: transform var(--duration-base) var(--ease-out);
   }
 
   .drawerClose,
