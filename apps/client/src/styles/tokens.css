@@ -2,14 +2,30 @@
  * SkillBridge design tokens (Stage 3, "UI/UX design system").
  * Components use ONLY these variables, which keeps every screen consistent (SB1/US44).
  * Teaching is always teal; learning is always amber.
+ *
+ * Themes (Sprint 2 additional requirement): the light values below are the default.
+ * `:root[data-theme='dark']` further down redefines ONLY colour and shadow tokens, so
+ * every component – old and new – switches theme without its own dark stylesheet.
+ * public/theme-init.js sets data-theme before the first paint (no flash).
  */
 :root {
+  color-scheme: light;
   /* Brand */
   --color-primary: #4f46e5;
   --color-primary-hover: #4338ca;
   --color-primary-active: #3730a3;
   --color-primary-tint: #eef2ff;
   --color-primary-border: #c7d2fe;
+
+  /* Brand panel colours: identical in both themes (auth screens, logo) */
+  --brand-gradient:
+    radial-gradient(circle at 85% 15%, rgb(20 184 166 / 0.35), transparent 40%),
+    radial-gradient(circle at 10% 90%, rgb(245 158 11 / 0.3), transparent 45%),
+    linear-gradient(160deg, #4338ca, #312e81);
+  --brand-teach-chip: rgb(240 253 250 / 0.95);
+  --brand-teach-ink: #0f766e;
+  --brand-learn-chip: rgb(255 251 235 / 0.95);
+  --brand-learn-ink: #b45309;
 
   /* Meaning colours */
   --color-teach: #0f766e;
@@ -46,6 +62,30 @@
   --color-info-tint: #eef2ff;
   --color-pending: #0369a1;
   --color-pending-tint: #f0f9ff;
+  --color-on-danger: #ffffff;
+  --color-danger-tint-strong: #fee2e2;
+  --color-danger-border: #fecaca;
+  --color-success-border: #bbf7d0;
+  --color-warning-border: #fed7aa;
+  --color-teach-border-soft: #5eead4;
+  --color-learn-border-soft: #fcd34d;
+  --color-teach-border-faint: #99f6e4;
+  --color-learn-border-faint: #fde68a;
+  --color-strength-good: #0891b2;
+
+  /* Surfaces that sit over other content */
+  --color-backdrop: rgb(15 23 42 / 0.5);
+  --color-topbar-bg: rgb(255 255 255 / 0.92);
+  --color-hover-overlay: rgb(15 23 42 / 0.08);
+  --color-skeleton-shine: #e9eef5;
+  --color-grid-line: #edf1f6;
+  --color-table-hover: #fafbff;
+  --gradient-profile-hero: linear-gradient(
+    120deg,
+    rgb(238 242 255 / 0.9),
+    rgb(240 253 250 / 0.6) 60%,
+    rgb(255 251 235 / 0.6)
+  );
 
   /* Typography */
   --font-sans: 'Inter Variable', Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
@@ -108,6 +148,91 @@
   --z-drawer: 40;
   --z-modal: 50;
   --z-toast: 60;
+}
+
+/* Dark theme: same token names, colours tuned for a dark navy (not pure black) background.
+   Every text/background pair used by components meets WCAG AA (4.5:1) – see docs/architecture. */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --color-primary: #818cf8;
+  --color-primary-hover: #a5b4fc;
+  --color-primary-active: #c7d2fe;
+  --color-primary-tint: #1e2350;
+  --color-primary-border: #3b4290;
+  --color-primary-ring: rgb(129 140 248 / 0.35);
+  --color-on-primary: #0b1120;
+
+  --color-teach: #5eead4;
+  --color-teach-border: #2dd4bf;
+  --color-teach-tint: #0f2a2a;
+  --color-teach-tint-strong: #134e4a;
+  --color-learn: #fbbf24;
+  --color-learn-border: #f59e0b;
+  --color-learn-tint: #2a1f0c;
+  --color-learn-tint-strong: #451a03;
+
+  --color-bg: #0b1120;
+  --color-surface: #111a2e;
+  --color-surface-muted: #1a2540;
+  --color-surface-raised: #17223a;
+  --color-border: #26324a;
+  --color-border-strong: #3a4865;
+  --color-text: #e6ebf5;
+  --color-text-secondary: #b3bfd4;
+  --color-text-muted: #8d9ab3;
+
+  --color-success: #4ade80;
+  --color-success-tint: #0f2a1c;
+  --color-danger: #f87171;
+  --color-danger-hover: #fca5a5;
+  --color-danger-tint: #2d1416;
+  --color-danger-ring: rgb(248 113 113 / 0.3);
+  --color-warning: #fb923c;
+  --color-warning-tint: #2d1a0e;
+  --color-info: #818cf8;
+  --color-info-tint: #1e2350;
+  --color-pending: #38bdf8;
+  --color-pending-tint: #0c2233;
+  --color-on-danger: #1a0b0b;
+  --color-danger-tint-strong: #3f1a1d;
+  --color-danger-border: #7f1d1d;
+  --color-success-border: #166534;
+  --color-warning-border: #7c2d12;
+  --color-teach-border-soft: #115e59;
+  --color-learn-border-soft: #78350f;
+  --color-teach-border-faint: #134e4a;
+  --color-learn-border-faint: #713f12;
+  --color-strength-good: #22d3ee;
+
+  --color-backdrop: rgb(2 6 23 / 0.7);
+  --color-topbar-bg: rgb(17 26 46 / 0.9);
+  --color-hover-overlay: rgb(255 255 255 / 0.08);
+  --color-skeleton-shine: #24304a;
+  --color-grid-line: #1f2a40;
+  --color-table-hover: #151f36;
+  --gradient-profile-hero: linear-gradient(
+    120deg,
+    rgb(129 140 248 / 0.14),
+    rgb(45 212 191 / 0.08) 60%,
+    rgb(251 191 36 / 0.08)
+  );
+
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-md: 0 4px 12px rgb(0 0 0 / 0.45);
+  --shadow-lg: 0 16px 40px rgb(0 0 0 / 0.55);
+}
+
+/* Smooth, short colour change while switching themes only (removed again after 250 ms). */
+:root.theme-transition,
+:root.theme-transition *,
+:root.theme-transition *::before,
+:root.theme-transition *::after {
+  transition:
+    background-color var(--duration-base) ease,
+    border-color var(--duration-base) ease,
+    color var(--duration-base) ease,
+    fill var(--duration-base) ease !important;
 }
 
 @media (max-width: 767px) {

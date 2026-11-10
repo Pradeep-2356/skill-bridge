@@ -84,6 +84,7 @@ describe('evaluateCandidate (SB2/US17–23, US43)', () => {
       'Same time zone',
       'Wants to learn Python, which you teach – you could swap skills',
     ]);
+    expect(r.notes).toEqual([]);
     expect(r.proposedSlot).toEqual({
       startsAt: new Date('2026-11-11T12:30:00Z'),
       endsAt: new Date('2026-11-11T13:00:00Z'),
@@ -112,9 +113,12 @@ describe('evaluateCandidate (SB2/US17–23, US43)', () => {
     const r = evaluate(m, { wantedLevel: 'advanced', requireLevel: false });
     expect(r.eligible).toBe(true);
     expect(r.score.level).toBe(0);
-    expect(r.reasons[0]).toContain('below the advanced level');
-    expect(r.reasons[1]).toBe('No overlapping free time yet');
-    expect(r.reasons[2]).toBe('10 h 30 min time difference');
+    expect(r.reasons).toEqual(['Wants to learn Python, which you teach – you could swap skills']);
+    expect(r.notes).toEqual([
+      'Teaches React at Beginner level (below the advanced level you want)',
+      'No overlapping free time yet',
+      '10 h 30 min time difference',
+    ]);
     expect(r.proposedSlot).toMatchObject({ shared: false, startsAt: new Date('2026-11-14T14:00:00Z') });
   });
 });

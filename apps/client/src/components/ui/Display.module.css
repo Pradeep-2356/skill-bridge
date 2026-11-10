@@ -89,13 +89,13 @@
 
 .chip-teach {
   background: var(--color-teach-tint);
-  border-color: #5eead4;
+  border-color: var(--color-teach-border-soft);
   color: var(--color-teach);
 }
 
 .chip-learn {
   background: var(--color-learn-tint);
-  border-color: #fcd34d;
+  border-color: var(--color-learn-border-soft);
   color: var(--color-learn);
 }
 
@@ -122,7 +122,7 @@
 }
 
 .chipRemove:hover {
-  background: rgb(15 23 42 / 0.08);
+  background: var(--color-hover-overlay);
 }
 
 .ring {

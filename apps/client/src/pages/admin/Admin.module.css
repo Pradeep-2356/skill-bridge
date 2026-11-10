@@ -31,7 +31,7 @@
 .search:focus {
   outline: none;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgb(79 70 229 / 0.18);
+  box-shadow: var(--shadow-focus);
 }
 
 .tableWrap {
@@ -65,7 +65,7 @@
 }
 
 .table tbody tr:hover {
-  background: #fafbff;
+  background: var(--color-table-hover);
 }
 
 .table tbody tr:last-child td {
@@ -120,4 +120,23 @@
     grid-template-columns: 1fr;
     padding: var(--space-4);
   }
+}
+
+/* Sprint 2 – catalogue review (SB2/US47) */
+.toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: var(--space-4);
+}
+
+.rowActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  justify-content: flex-end;
+}
+
+.formError {
+  color: var(--color-danger);
+  font-size: var(--text-sm);
 }

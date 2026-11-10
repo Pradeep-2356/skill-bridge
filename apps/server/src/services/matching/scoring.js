@@ -107,16 +107,18 @@ export function evaluateCandidate({
   score.total = score.skill + score.level + score.availability + score.timezone + score.exchange;
 
   const wantedLabel = LEVEL_LABEL[wantedLevel] ?? wantedLevel;
-  const reasons = [
-    `Teaches ${skillName ?? 'this skill'} at ${LEVEL_LABEL[entry.proficiency]} level` +
-      (level === MATCH_WEIGHTS.level
-        ? ` (above the ${wantedLabel.toLowerCase()} level you want)`
-        : level === MATCH_WEIGHTS.levelEqual
-          ? ' (the level you want)'
-          : ` (below the ${wantedLabel.toLowerCase()} level you want)`),
-    sharedMinutes ? `${describeMinutes(sharedMinutes)} of shared free time each week` : 'No overlapping free time yet',
-    tzGapHours ? `${describeMinutes(Math.round(tzGapHours * 60))} time difference` : 'Same time zone',
-  ];
+  // Reasons = what speaks for the match; notes = gaps the learner should know about.
+  const reasons = [];
+  const notes = [];
+  const levelText = `Teaches ${skillName ?? 'this skill'} at ${LEVEL_LABEL[entry.proficiency]} level`;
+  if (level === MATCH_WEIGHTS.level)
+    reasons.push(`${levelText} (above the ${wantedLabel.toLowerCase()} level you want)`);
+  else if (level === MATCH_WEIGHTS.levelEqual) reasons.push(`${levelText} (the level you want)`);
+  else notes.push(`${levelText} (below the ${wantedLabel.toLowerCase()} level you want)`);
+  if (sharedMinutes) reasons.push(`${describeMinutes(sharedMinutes)} of shared free time each week`);
+  else notes.push('No overlapping free time yet');
+  const tzText = tzGapHours ? `${describeMinutes(Math.round(tzGapHours * 60))} time difference` : 'Same time zone';
+  (tzGapHours <= 6 ? reasons : notes).push(tzText);
   if (exchange.length) {
     const names = exchange.map((l) => l.skill?.name).filter(Boolean);
     reasons.push(
@@ -134,6 +136,7 @@ export function evaluateCandidate({
     mentorLevel: entry.proficiency,
     score,
     reasons,
+    notes,
     sharedMinutes,
     tzGapHours,
     exchange,

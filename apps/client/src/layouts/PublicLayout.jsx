@@ -1,5 +1,6 @@
 import { Outlet } from 'react-router';
 import { Logo } from '../components/Logo.jsx';
+import { ThemeToggle } from '../features/theme/ThemeToggle.jsx';
 import { Button } from '../components/ui/index.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import styles from './PublicLayout.module.css';
@@ -15,6 +16,7 @@ export function PublicLayout() {
         <div className={styles.inner}>
           <Logo />
           <nav aria-label="Account" className={styles.actions}>
+            <ThemeToggle />
             {isAuthenticated ? (
               <Button to="/dashboard">Go to dashboard</Button>
             ) : (

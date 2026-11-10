@@ -13,9 +13,14 @@ import {
   Menu,
   X,
   ChevronDown,
+  Inbox,
+  HeartHandshake,
+  Tags,
 } from 'lucide-react';
 import { Logo } from '../components/Logo.jsx';
 import { Avatar } from '../components/ui/index.js';
+import { NotificationBell } from '../features/notifications/NotificationBell.jsx';
+import { ThemeToggle } from '../features/theme/ThemeToggle.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import styles from './AppLayout.module.css';
@@ -24,6 +29,8 @@ import styles from './AppLayout.module.css';
 const NAV = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/discover', label: 'Find mentors', icon: Search },
+  { to: '/matches', label: 'Suggested', icon: HeartHandshake },
+  { to: '/requests', label: 'Requests', icon: Inbox },
   { to: '/sessions', label: 'Sessions', icon: CalendarClock },
   { to: '/profile', label: 'My profile', icon: UserRound },
   { to: '/skills', label: 'Skills', icon: Sparkles },
@@ -60,6 +67,16 @@ function SidebarNav({ isAdmin, onNavigate }) {
               >
                 <ShieldCheck size={20} aria-hidden="true" />
                 <span className={styles.navLabel}>Manage users</span>
+              </NavLink>
+            </li>
+            <li>
+              <NavLink
+                to="/admin/catalog"
+                className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ''}`}
+                onClick={onNavigate}
+              >
+                <Tags size={20} aria-hidden="true" />
+                <span className={styles.navLabel}>Skill catalogue</span>
               </NavLink>
             </li>
           </ul>
@@ -200,7 +217,11 @@ export function AppLayout() {
               maxLength={60}
             />
           </form>
-          <UserMenu user={user} onLogout={handleLogout} />
+          <div className={styles.topActions}>
+            <ThemeToggle />
+            <NotificationBell />
+            <UserMenu user={user} onLogout={handleLogout} />
+          </div>
         </header>
         <main id="main" className={styles.main} tabIndex={-1}>
           <div className={styles.content}>

@@ -45,11 +45,13 @@ export function MentorCard({ mentor, footer }) {
       </div>
       <ul role="list" className={styles.facts}>
         <li>
-          <Globe2 size={14} aria-hidden="true" /> {mentor.timezone.replace(/_/g, ' ')} (
-          {zoneOffsetLabel(mentor.timezone)})
-          {mentor.tzGapHours !== undefined ? (
-            <span className={styles.factNote}> · {formatZoneGap(mentor.tzGapHours)}</span>
-          ) : null}
+          <Globe2 size={14} aria-hidden="true" />
+          <span>
+            {mentor.timezone.replace(/_/g, ' ')} ({zoneOffsetLabel(mentor.timezone)})
+            {mentor.tzGapHours !== undefined ? (
+              <span className={styles.factNote}> · {formatZoneGap(mentor.tzGapHours)}</span>
+            ) : null}
+          </span>
         </li>
         <li>
           <Clock size={14} aria-hidden="true" />{' '}
@@ -59,8 +61,8 @@ export function MentorCard({ mentor, footer }) {
         </li>
         {mentor.sharedMinutes ? (
           <li className={styles.factGood}>
-            <CalendarCheck size={14} aria-hidden="true" /> {formatMinutes(mentor.sharedMinutes)} a week free at the same
-            time as you
+            <CalendarCheck size={14} aria-hidden="true" />
+            <span>{formatMinutes(mentor.sharedMinutes)} a week free at the same time as you</span>
           </li>
         ) : null}
       </ul>

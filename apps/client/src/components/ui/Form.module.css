@@ -61,7 +61,7 @@
 .input:focus {
   outline: none;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgb(79 70 229 / 0.18);
+  box-shadow: var(--shadow-focus);
 }
 
 .input:disabled {
@@ -79,7 +79,7 @@
 
 .invalid:focus {
   border-color: var(--color-danger);
-  box-shadow: 0 0 0 3px rgb(185 28 28 / 0.15);
+  box-shadow: 0 0 0 3px var(--color-danger-ring);
 }
 
 .textarea {
@@ -187,7 +187,7 @@
 }
 
 .strength3 {
-  background: #0891b2;
+  background: var(--color-strength-good);
 }
 
 .strength4 {
@@ -246,7 +246,7 @@
   display: flex;
   gap: var(--space-3);
   padding: var(--space-3) var(--space-4);
-  border: 1px solid #fecaca;
+  border: 1px solid var(--color-danger-border);
   border-left: 4px solid var(--color-danger);
   border-radius: var(--radius-md);
   background: var(--color-danger-tint);
@@ -276,4 +276,54 @@
 
 .summaryList a {
   color: var(--color-danger);
+}
+
+/* Switch (Sprint 2 settings) */
+.switchRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.switchLabel {
+  font-weight: var(--weight-semibold);
+  color: var(--color-text);
+}
+
+.switch {
+  position: relative;
+  flex-shrink: 0;
+  width: 44px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: var(--color-border-strong);
+  transition: background-color var(--duration-fast) var(--ease-out);
+}
+
+.switch[aria-checked='true'] {
+  background: var(--color-primary);
+}
+
+.switch:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.switchThumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: var(--radius-full);
+  background: var(--color-on-primary);
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+.switch[aria-checked='true'] .switchThumb {
+  transform: translateX(20px);
 }

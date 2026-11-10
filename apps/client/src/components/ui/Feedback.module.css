@@ -31,7 +31,7 @@
 }
 
 .spinner-inverse {
-  color: var(--color-text-inverse);
+  color: currentColor;
 }
 
 @keyframes spin {
@@ -54,7 +54,12 @@
 
 .skeleton {
   display: block;
-  background: linear-gradient(90deg, var(--color-surface-muted) 25%, #e9eef5 37%, var(--color-surface-muted) 63%);
+  background: linear-gradient(
+    90deg,
+    var(--color-surface-muted) 25%,
+    var(--color-skeleton-shine) 37%,
+    var(--color-surface-muted) 63%
+  );
   background-size: 400% 100%;
   animation: shimmer 1.4s ease infinite;
 }
@@ -123,12 +128,12 @@
 }
 
 .error {
-  border-color: #fecaca;
+  border-color: var(--color-danger-border);
   background: var(--color-danger-tint);
 }
 
 .errorIcon {
-  background: #fee2e2;
+  background: var(--color-danger-tint-strong);
   color: var(--color-danger);
 }
 
@@ -183,19 +188,19 @@
 
 .alert-success {
   background: var(--color-success-tint);
-  border-color: #bbf7d0;
+  border-color: var(--color-success-border);
   color: var(--color-success);
 }
 
 .alert-danger {
   background: var(--color-danger-tint);
-  border-color: #fecaca;
+  border-color: var(--color-danger-border);
   color: var(--color-danger);
 }
 
 .alert-warning {
   background: var(--color-warning-tint);
-  border-color: #fed7aa;
+  border-color: var(--color-warning-border);
   color: var(--color-warning);
 }
 
@@ -226,13 +231,13 @@
 .badge-teach {
   background: var(--color-teach-tint);
   color: var(--color-teach);
-  border-color: #99f6e4;
+  border-color: var(--color-teach-border-faint);
 }
 
 .badge-learn {
   background: var(--color-learn-tint);
   color: var(--color-learn);
-  border-color: #fde68a;
+  border-color: var(--color-learn-border-faint);
 }
 
 .badge-success {

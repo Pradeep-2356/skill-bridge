@@ -1,5 +1,6 @@
-import { useNavigate, useParams } from 'react-router';
-import { Eye, Pencil, Info, UserX } from 'lucide-react';
+import { useState } from 'react';
+import { Link, useNavigate, useParams } from 'react-router';
+import { Eye, Pencil, Info, UserX, Send, PauseCircle } from 'lucide-react';
 import { LIMITS, profileUpdateSchema } from '@skillbridge/shared';
 import {
   PageHeader,
@@ -12,12 +13,17 @@ import {
   ErrorState,
   EmptyState,
   Alert,
+  Badge,
 } from '../../components/ui/index.js';
 import { ProfileView } from '../../features/profile/ProfileView.jsx';
 import { AvatarUploader } from '../../features/profile/AvatarUploader.jsx';
 import { InterestPicker } from '../../features/profile/InterestPicker.jsx';
 import { TimezoneSelect } from '../../features/availability/TimezoneSelect.jsx';
-import { profileApi, skillsApi } from '../../features/api.js';
+import { profileApi, skillsApi, mentorsApi } from '../../features/api.js';
+import { ExchangeCard, AvailabilityCompare } from '../../features/mentors/MentorInsights.jsx';
+import { RequestModal } from '../../features/requests/RequestModal.jsx';
+import { StatusBadge, statusLabel } from '../../features/requests/RequestStatus.jsx';
+import mentorStyles from '../../features/mentors/Mentors.module.css';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useToast } from '../../context/ToastContext.jsx';
 import { useApi } from '../../hooks/useApi.js';
@@ -103,16 +109,54 @@ export function ProfilePreviewPage() {
   );
 }
 
-/** Another member's public profile (SB1/US46 – public fields only). */
+/**
+ * Another member's public profile (SB1/US46) extended for discovery (SB2/US8–12, US30):
+ * skills, availability in both time zones, skill-exchange hints and a Request button.
+ */
 export function PublicProfilePage() {
   const { id } = useParams();
-  const { user } = useAuth();
-  const { data, loading, error, reload } = useApi(() => profileApi.publicProfile(id), [id]);
+  const { data, loading, error, reload } = useApi(() => mentorsApi.get(id), [id]);
+  const [requesting, setRequesting] = useState(false);
   useDocumentTitle(data?.profile?.name ?? 'Profile');
-  const isMe = user?.id === id;
+  const profile = data?.profile;
+  const isMe = data?.isSelf;
+  const teach = profile?.teachSkills ?? [];
+  const wantIds = new Set((data?.exchange?.theyCanTeachYou ?? []).map((e) => e.skill.id));
+  const preselect = teach.find((t) => wantIds.has(t.skill?.id))?.skill?.id;
+
+  let requestArea = null;
+  if (profile && !isMe) {
+    const canRequest = profile.acceptingRequests && teach.length > 0 && profile.availability.length > 0;
+    requestArea = (
+      <div className={mentorStyles.requestBox}>
+        {data.openRequests.length ? (
+          <div className={mentorStyles.openRequests}>
+            {data.openRequests.map((r) => (
+              <Link key={r.id} to={`/requests/${r.id}`}>
+                <StatusBadge status={r.status} label={`${r.skill?.name ?? 'Request'}: ${statusLabel(r.status)}`} />
+              </Link>
+            ))}
+          </div>
+        ) : null}
+        <Button leftIcon={Send} onClick={() => setRequesting(true)} disabled={!canRequest}>
+          Request a session
+        </Button>
+        {!profile.acceptingRequests ? (
+          <Badge tone="warning" icon={PauseCircle}>
+            Not taking requests right now
+          </Badge>
+        ) : !teach.length ? (
+          <span className={page.muted}>No teaching skills listed yet</span>
+        ) : !profile.availability.length ? (
+          <span className={page.muted}>No available times set yet</span>
+        ) : null}
+      </div>
+    );
+  }
+
   return (
     <>
-      <PageHeader title={data?.profile?.name ?? 'Member profile'} backTo="/discover" backLabel="Back to discovery" />
+      <PageHeader title={profile?.name ?? 'Member profile'} backTo="/discover" backLabel="Back to discovery" />
       {isMe ? (
         <Alert tone="info" title="This is your own profile">
           <Button variant="link" to="/profile/edit">
@@ -132,8 +176,26 @@ export function PublicProfilePage() {
         ) : error ? (
           <ErrorState message={error.message} onRetry={reload} />
         ) : null}
-        {data?.profile ? <ProfileView profile={data.profile} /> : null}
+        {profile ? (
+          <ProfileView
+            profile={profile}
+            headerActions={requestArea}
+            mainExtra={isMe ? null : <ExchangeCard exchange={data.exchange} mentorName={profile.name.split(' ')[0]} />}
+            availabilitySlot={<AvailabilityCompare availability={data.availability} mentorName={profile.name} />}
+          />
+        ) : null}
       </div>
+      {requesting && profile ? (
+        <RequestModal
+          open
+          onClose={() => setRequesting(false)}
+          mentor={profile}
+          skills={teach.filter((t) => t.skill)}
+          preselectId={preselect}
+          nextSlot={data.availability.nextSharedSlot ?? data.availability.nextMentorSlot}
+          viewerTimezone={data.availability.viewerTimezone}
+        />
+      ) : null}
     </>
   );
 }

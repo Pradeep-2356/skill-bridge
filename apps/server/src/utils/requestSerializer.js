@@ -43,6 +43,7 @@ export function serializeRequest(r, viewerId, viewerRole) {
     message: r.message ?? '',
     score: r.score ?? null,
     reasons: r.reasons ?? [],
+    notes: r.notes ?? [],
     sharedMinutes: r.sharedMinutes ?? 0,
     proposedSlot: r.proposedSlot?.startsAt ? r.proposedSlot : null,
     failure: r.failure?.code ? r.failure : null,

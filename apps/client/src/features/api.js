@@ -58,3 +58,40 @@ export const adminApi = {
   user: (id) => request(api.get(`/admin/users/${id}`)),
   setStatus: (id, body) => request(api.patch(`/admin/users/${id}/status`, body)),
 };
+
+// ───────────────────────── Sprint 2 ─────────────────────────
+
+export const mentorsApi = {
+  get: (id) => request(api.get(`/mentors/${id}`)),
+  setAccepting: (acceptingRequests) => request(api.patch('/users/me/accepting-requests', { acceptingRequests })),
+};
+
+export const requestsApi = {
+  create: (body) => request(api.post('/match-requests', body)),
+  list: (params) => request(api.get('/match-requests', { params })),
+  get: (id) => request(api.get(`/match-requests/${id}`)),
+  accept: (id) => request(api.patch(`/match-requests/${id}/accept`)),
+  decline: (id, reason) => request(api.patch(`/match-requests/${id}/decline`, reason ? { reason } : {})),
+  cancel: (id) => request(api.patch(`/match-requests/${id}/cancel`)),
+  retry: (id) => request(api.post(`/match-requests/${id}/retry`)),
+};
+
+export const matchesApi = {
+  suggestions: (params) => request(api.get('/matches/suggestions', { params })),
+};
+
+export const notificationsApi = {
+  list: (params) => request(api.get('/notifications', { params })),
+  unreadCount: () => request(api.get('/notifications/unread-count')),
+  markRead: (id) => request(api.patch(`/notifications/${id}/read`)),
+  markAllRead: () => request(api.post('/notifications/read-all')),
+};
+
+export const adminCatalogApi = {
+  categories: () => request(api.get('/admin/categories')),
+  createCategory: (body) => request(api.post('/admin/categories', body)),
+  updateCategory: (id, body) => request(api.patch(`/admin/categories/${id}`, body)),
+  deleteCategory: (id) => request(api.delete(`/admin/categories/${id}`)),
+  skills: (params) => request(api.get('/admin/skills', { params })),
+  updateSkill: (id, body) => request(api.patch(`/admin/skills/${id}`, body)),
+};

@@ -28,7 +28,8 @@ describe('Profile (SB1/US16–19, US30, US31, US46)', () => {
   });
 
   it('shows a friendly message for an unavailable public profile', async () => {
-    server.use(http.get(`${API}/users/u404`, () => fail(404, 'NOT_FOUND', 'This profile is not available.')));
+    // Sprint 2: the public profile page loads the richer /mentors/:id view.
+    server.use(http.get(`${API}/mentors/u404`, () => fail(404, 'NOT_FOUND', 'This profile is not available.')));
     renderApp('/users/u404', { user: me });
     expect(await screen.findByText('Profile not available')).toBeInTheDocument();
   });

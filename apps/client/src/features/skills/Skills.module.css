@@ -40,7 +40,7 @@
 .pickerInput:focus {
   outline: none;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgb(79 70 229 / 0.18);
+  box-shadow: var(--shadow-focus);
 }
 
 .pickerInvalid {
@@ -125,12 +125,12 @@
 
 .selected-teach {
   background: var(--color-teach-tint);
-  border-color: #5eead4;
+  border-color: var(--color-teach-border-soft);
 }
 
 .selected-learn {
   background: var(--color-learn-tint);
-  border-color: #fcd34d;
+  border-color: var(--color-learn-border-soft);
 }
 
 .selectedName {

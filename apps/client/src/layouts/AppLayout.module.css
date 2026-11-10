@@ -105,7 +105,7 @@
   height: var(--topbar-height);
   padding: 0 var(--page-padding);
   border-bottom: 1px solid var(--color-border);
-  background: rgb(255 255 255 / 0.92);
+  background: var(--color-topbar-bg);
   backdrop-filter: blur(8px);
 }
 
@@ -146,12 +146,18 @@
   outline: none;
   background: var(--color-surface);
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgb(79 70 229 / 0.18);
+  box-shadow: var(--shadow-focus);
+}
+
+.topActions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-left: auto;
 }
 
 .userMenu {
   position: relative;
-  margin-left: auto;
 }
 
 .userButton {
@@ -310,7 +316,7 @@
     position: fixed;
     inset: 0;
     z-index: calc(var(--z-drawer) - 1);
-    background: rgb(15 23 42 / 0.45);
+    background: var(--color-backdrop);
   }
 
   .userName {

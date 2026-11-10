@@ -82,7 +82,7 @@
   height: 48px;
   border-radius: var(--radius-full);
   background: var(--color-primary);
-  color: #fff;
+  color: var(--color-on-primary);
   font-weight: var(--weight-bold);
 }
 
@@ -122,13 +122,13 @@
 .chipTeach {
   background: var(--color-teach-tint);
   color: var(--color-teach);
-  border-color: #5eead4;
+  border-color: var(--color-teach-border-soft);
 }
 
 .chipLearn {
   background: var(--color-learn-tint);
   color: var(--color-learn);
-  border-color: #fcd34d;
+  border-color: var(--color-learn-border-soft);
 }
 
 .mockSession {

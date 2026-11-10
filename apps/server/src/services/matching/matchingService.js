@@ -122,6 +122,7 @@ export async function getSuggestions(learnerId, { skillId, limit = LIMITS.MATCH_
         mentorLevel: r.mentorLevel,
         score: r.score,
         reasons: r.reasons,
+        notes: r.notes,
         sharedMinutes: r.sharedMinutes,
         tzGapHours: r.tzGapHours,
         proposedSlot: r.proposedSlot,
@@ -166,6 +167,7 @@ async function deliver(request, evaluation, now, { learner, mentor, skill }) {
   request.mentor = mentor._id;
   request.score = evaluation.score;
   request.reasons = evaluation.reasons;
+  request.notes = evaluation.notes;
   request.sharedMinutes = evaluation.sharedMinutes;
   request.proposedSlot = evaluation.proposedSlot;
   request.failure = null;
@@ -200,7 +202,12 @@ export async function processRequest(requestId, now = new Date()) {
   const request = await MatchRequest.findById(requestId);
   if (!request || request.status !== REQUEST_STATUS.QUEUED) return { skipped: true };
 
-  const rate = runtime().config.MATCH_FAILURE_RATE ?? 0;
+  let rate;
+  try {
+    rate = runtime().config.MATCH_FAILURE_RATE ?? 0;
+  } catch {
+    rate = 0; // called from the seed script, where no app runtime exists
+  }
   if (rate > 0 && Math.random() < rate) throw new Error('Simulated temporary matching failure (MATCH_FAILURE_RATE)');
 
   const [learner, skill] = await Promise.all([

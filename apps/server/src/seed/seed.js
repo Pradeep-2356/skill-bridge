@@ -9,9 +9,14 @@ import {
   DEACTIVATED_BY,
   SESSION_SOURCE,
   SESSION_STATUS,
+  SKILL_STATUS,
+  REQUEST_MODES,
+  REQUEST_STATUS,
   normalizeSkillName,
 } from '@skillbridge/shared';
-import { Category, Skill, User, Session } from '../models/index.js';
+import { Category, Skill, User, Session, MatchRequest } from '../models/index.js';
+import { processRequest } from '../services/matching/matchingService.js';
+import { acceptRequest, declineRequest } from '../services/requestService.js';
 import { CATEGORIES, SKILLS, PEOPLE, DEMO_DOMAIN, patternFor } from './data.js';
 
 const DAY = 86_400_000;
@@ -23,7 +28,7 @@ function utcAt(days, hour, minute = 0, now = new Date()) {
 }
 
 export async function seedDatabase({ password = 'Demo@1234', bcryptCost = 10, log = () => {}, now = new Date() } = {}) {
-  const summary = { categories: 0, skills: 0, users: 0, sessions: 0 };
+  const summary = { categories: 0, skills: 0, users: 0, sessions: 0, requests: 0 };
 
   // 1. Categories
   const categoryBySlug = {};
@@ -135,8 +140,56 @@ export async function seedDatabase({ password = 'Demo@1234', bcryptCost = 10, lo
     summary.sessions = rows.length;
   }
 
+  // 5. Sprint 2 demo data (only once): a paused mentor, a custom skill to review,
+  //    and learning requests created through the real matching and request services.
+  await User.updateOne(
+    { email: `mia@${DEMO_DOMAIN}`, acceptingRequests: { $ne: false } },
+    { $set: { acceptingRequests: false } },
+  );
+  if (!(await Skill.exists({ normalizedName: 'svelte kit' }))) {
+    const custom = await Skill.create({
+      name: 'Svelte Kit',
+      category: skillByName.React.category,
+      status: SKILL_STATUS.PENDING,
+      createdBy: userByKey.aarav._id,
+    });
+    await User.updateOne(
+      { _id: userByKey.aarav._id },
+      { $push: { teachSkills: { skill: custom._id, proficiency: 'intermediate' } } },
+    );
+  }
+  if ((await MatchRequest.countDocuments()) === 0) {
+    const make = async (learner, mentor, skill, message) => {
+      const request = await MatchRequest.create({
+        learner: userByKey[learner]._id,
+        mentor: userByKey[mentor]._id,
+        skill: skillByName[skill]._id,
+        mode: REQUEST_MODES.DIRECT,
+        message,
+        status: REQUEST_STATUS.QUEUED,
+        history: [{ status: REQUEST_STATUS.QUEUED, by: 'learner', at: new Date(now.getTime() - 3600_000) }],
+      });
+      await processRequest(request._id, now);
+      summary.requests += 1;
+      return request._id;
+    };
+    // Waiting for Priya (mentor journey).
+    await make('meera', 'priya', 'React', 'Hi Priya! I know HTML and CSS and want to start React with small projects.');
+    await make(
+      'isla',
+      'priya',
+      'UI Design',
+      'Could you review my portfolio layouts and teach me the basics of spacing?',
+    );
+    // Arjun's history (learner view): one accepted with a real session, one declined.
+    const accepted = await make('arjun', 'oliver', 'Public Speaking', 'I freeze in team meetings – can we practise?');
+    await acceptRequest(userByKey.oliver._id, accepted, now);
+    const declined = await make('arjun', 'meera', 'Indian Cooking', 'Would love to learn a weekday dal.');
+    await declineRequest(userByKey.meera._id, declined, { reason: 'I am travelling for the next two weeks.' }, now);
+  }
+
   log(
-    `Seed complete: +${summary.categories} categories, +${summary.skills} skills, +${summary.users} users, +${summary.sessions} demo sessions.`,
+    `Seed complete: +${summary.categories} categories, +${summary.skills} skills, +${summary.users} users, +${summary.sessions} demo sessions, +${summary.requests} learning requests.`,
   );
   return summary;
 }

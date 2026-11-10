@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Navigate, Outlet, useLocation, useRouteError } from 'react-router';
 import { AuthProvider } from '../context/AuthContext.jsx';
+import { ThemeProvider } from '../context/ThemeContext.jsx';
 import { PublicLayout } from '../layouts/PublicLayout.jsx';
 import { AuthLayout } from '../layouts/AuthLayout.jsx';
 import { AppLayout } from '../layouts/AppLayout.jsx';
@@ -23,6 +24,10 @@ import SessionsPage from '../pages/SessionsPage.jsx';
 import DiscoverPage from '../pages/DiscoverPage.jsx';
 import SettingsPage from '../pages/SettingsPage.jsx';
 import { AdminUsersPage, AdminUserDetailPage } from '../pages/admin/AdminPages.jsx';
+import AdminCatalogPage from '../pages/admin/AdminCatalogPage.jsx';
+import { RequestsPage, RequestDetailPage } from '../pages/RequestsPages.jsx';
+import MatchesPage from '../pages/MatchesPage.jsx';
+import NotificationsPage from '../pages/NotificationsPage.jsx';
 import NotFoundPage from '../pages/NotFoundPage.jsx';
 
 function ScrollToTop() {
@@ -41,10 +46,12 @@ function SearchRedirect() {
 
 function Root() {
   return (
-    <AuthProvider>
-      <ScrollToTop />
-      <Outlet />
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <ScrollToTop />
+        <Outlet />
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 
@@ -105,6 +112,10 @@ export const routes = [
               { path: '/sessions', element: <SessionsPage /> },
               { path: '/discover', element: <DiscoverPage /> },
               { path: '/search', element: <SearchRedirect /> },
+              { path: '/requests', element: <RequestsPage /> },
+              { path: '/requests/:id', element: <RequestDetailPage /> },
+              { path: '/matches', element: <MatchesPage /> },
+              { path: '/notifications', element: <NotificationsPage /> },
               { path: '/settings', element: <SettingsPage /> },
               {
                 path: '/admin',
@@ -112,6 +123,7 @@ export const routes = [
                 children: [
                   { path: 'users', element: <AdminUsersPage /> },
                   { path: 'users/:id', element: <AdminUserDetailPage /> },
+                  { path: 'catalog', element: <AdminCatalogPage /> },
                 ],
               },
             ],

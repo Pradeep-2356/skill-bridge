@@ -74,7 +74,7 @@ export function FilterPanel({ filters, categories, onChange, onClear, id = 'filt
             label="From"
             value={filters.from}
             onChange={(e) => set({ from: e.target.value })}
-            placeholder="Any time"
+            placeholder="Any"
             options={HALF_HOURS.slice(0, -1).map((t) => ({ value: t, label: t }))}
           />
           <Select
@@ -82,7 +82,7 @@ export function FilterPanel({ filters, categories, onChange, onClear, id = 'filt
             label="To"
             value={filters.to}
             onChange={(e) => set({ to: e.target.value })}
-            placeholder="Any time"
+            placeholder="Any"
             options={HALF_HOURS.slice(1).map((t) => ({
               value: t,
               label: t,

@@ -183,14 +183,12 @@ describe('admin catalogue review (SB2/US47, US42)', () => {
         learners: 0,
       }),
     ]);
-    const res = await admin
-      .patch(`/api/v1/admin/skills/${pending._id}`)
-      .send({
-        status: 'approved',
-        name: 'SvelteKit',
-        aliases: ['Svelte kit', 'sveltekit'],
-        categoryId: String(empty._id),
-      });
+    const res = await admin.patch(`/api/v1/admin/skills/${pending._id}`).send({
+      status: 'approved',
+      name: 'SvelteKit',
+      aliases: ['Svelte kit', 'sveltekit'],
+      categoryId: String(empty._id),
+    });
     expect(res.body.data.skill).toMatchObject({
       name: 'SvelteKit',
       status: 'approved',

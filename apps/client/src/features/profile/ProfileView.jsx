@@ -9,7 +9,7 @@ import styles from './Profile.module.css';
  * "Preview as others see it" and other users' profiles, so all three always
  * match (SB1/US30, US31, US46).
  */
-export function ProfileView({ profile, emptyHints = false, headerActions }) {
+export function ProfileView({ profile, emptyHints = false, headerActions, mainExtra, availabilitySlot }) {
   const teach = profile.teachSkills ?? [];
   const learn = profile.learnSkills ?? [];
   return (
@@ -62,6 +62,8 @@ export function ProfileView({ profile, emptyHints = false, headerActions }) {
               </p>
             )}
           </Card>
+
+          {mainExtra}
 
           <Card title="Can teach" subtitle="Skills and experience level">
             {teach.length === 0 ? (
@@ -117,13 +119,15 @@ export function ProfileView({ profile, emptyHints = false, headerActions }) {
         </div>
 
         <aside className={styles.side}>
-          <Card title="Weekly availability">
-            {profile.availability?.length ? (
-              <WeeklyBars slots={profile.availability} timezone={profile.timezone} />
-            ) : (
-              <EmptyState compact icon={Clock} title="No availability yet" />
-            )}
-          </Card>
+          {availabilitySlot ?? (
+            <Card title="Weekly availability">
+              {profile.availability?.length ? (
+                <WeeklyBars slots={profile.availability} timezone={profile.timezone} />
+              ) : (
+                <EmptyState compact icon={Clock} title="No availability yet" />
+              )}
+            </Card>
+          )}
           <Card title="Learning interests">
             {profile.learningInterests?.length ? (
               <ul role="list" className={styles.interests}>

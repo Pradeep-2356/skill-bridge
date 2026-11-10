@@ -49,6 +49,7 @@ const matchRequestSchema = new Schema(
     active: { type: Boolean, default: true },
     score: { type: scoreSchema, default: null },
     reasons: { type: [String], default: [] },
+    notes: { type: [String], default: [] },
     sharedMinutes: { type: Number, default: 0 },
     proposedSlot: {
       type: new Schema({ startsAt: Date, endsAt: Date, shared: Boolean }, { _id: false }),

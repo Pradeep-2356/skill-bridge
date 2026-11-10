@@ -354,6 +354,7 @@ export async function retryRequest(learnerId, id, now = new Date()) {
   request.deliveredAt = null;
   request.score = null;
   request.reasons = [];
+  request.notes = [];
   request.proposedSlot = null;
   if (request.mode === REQUEST_MODES.AUTO) request.mentor = null;
   try {

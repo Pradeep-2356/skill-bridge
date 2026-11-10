@@ -1,6 +1,7 @@
 import { Outlet } from 'react-router';
 import { CalendarClock, GraduationCap, Users } from 'lucide-react';
 import { Logo } from '../components/Logo.jsx';
+import { ThemeToggle } from '../features/theme/ThemeToggle.jsx';
 import styles from './AuthLayout.module.css';
 
 /** Split screen used by Login, Register and password recovery (SB1/US15). */
@@ -38,6 +39,9 @@ export function AuthLayout() {
         </div>
       </aside>
       <main id="main" className={styles.main}>
+        <div className={styles.themeCorner}>
+          <ThemeToggle />
+        </div>
         <div className={styles.mobileLogo}>
           <Logo />
         </div>

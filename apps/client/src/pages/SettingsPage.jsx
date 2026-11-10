@@ -11,13 +11,53 @@ import {
   FormErrorSummary,
   ConfirmDialog,
 } from '../components/ui/index.js';
-import { authApi, profileApi } from '../features/api.js';
+import { authApi, profileApi, mentorsApi } from '../features/api.js';
+import { Switch } from '../components/ui/Switch.jsx';
+import { AppearanceCard } from '../features/theme/AppearanceCard.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import { useForm } from '../hooks/useForm.js';
 import { useDocumentTitle } from '../hooks/misc.js';
 import { formatDate } from '../utils/format.js';
 import page from './Page.module.css';
+
+/** SB2/US43 – pause or resume new learning requests. */
+function MentoringCard() {
+  const { user, setUser } = useAuth();
+  const toast = useToast();
+  const [busy, setBusy] = useState(false);
+  const accepting = user.acceptingRequests !== false;
+
+  async function toggle(next) {
+    setBusy(true);
+    try {
+      const { data } = await mentorsApi.setAccepting(next);
+      setUser({ ...user, acceptingRequests: data.acceptingRequests });
+      toast.success(
+        data.acceptingRequests
+          ? 'You are taking new learning requests again.'
+          : 'New requests are paused. Learners will see “Not taking requests”.',
+      );
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Card title="Mentoring" subtitle="Control whether learners can send you new requests.">
+      <Switch
+        id="accepting-requests"
+        label="Accept new learning requests"
+        description="Turn this off when you are busy. Requests you already have are not affected."
+        checked={accepting}
+        disabled={busy}
+        onChange={toggle}
+      />
+    </Card>
+  );
+}
 
 /** SB1/US7 – change password while signed in. */
 function ChangePasswordCard() {
@@ -132,7 +172,7 @@ export default function SettingsPage() {
 
   return (
     <>
-      <PageHeader title="Account settings" subtitle="Security and account controls." />
+      <PageHeader title="Account settings" subtitle="Mentoring, appearance, security and account controls." />
       <div className={page.stack}>
         <Card title="Account">
           <dl className={page.definition}>
@@ -142,6 +182,10 @@ export default function SettingsPage() {
             <dd>{formatDate(user.createdAt, user.timezone)}</dd>
           </dl>
         </Card>
+
+        <MentoringCard />
+
+        <AppearanceCard />
 
         <ChangePasswordCard />
 

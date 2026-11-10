@@ -11,9 +11,7 @@
   padding: var(--space-6);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  background:
-    linear-gradient(120deg, rgb(238 242 255 / 0.9), rgb(240 253 250 / 0.6) 60%, rgb(255 251 235 / 0.6)),
-    var(--color-surface);
+  background: var(--gradient-profile-hero), var(--color-surface);
   box-shadow: var(--shadow-sm);
 }
 

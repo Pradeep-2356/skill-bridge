@@ -14,10 +14,7 @@
   padding: var(--space-10);
   overflow: hidden;
   color: var(--color-text-inverse);
-  background:
-    radial-gradient(circle at 85% 15%, rgb(20 184 166 / 0.35), transparent 40%),
-    radial-gradient(circle at 10% 90%, rgb(245 158 11 / 0.3), transparent 45%),
-    linear-gradient(160deg, #4338ca, #312e81);
+  background: var(--brand-gradient);
 }
 
 .pitch {
@@ -62,16 +59,17 @@
 }
 
 .teach {
-  background: rgb(240 253 250 / 0.95);
-  color: var(--color-teach);
+  background: var(--brand-teach-chip);
+  color: var(--brand-teach-ink);
 }
 
 .learn {
-  background: rgb(255 251 235 / 0.95);
-  color: var(--color-learn);
+  background: var(--brand-learn-chip);
+  color: var(--brand-learn-ink);
 }
 
 .main {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -106,4 +104,10 @@
     justify-content: flex-start;
     padding-top: var(--space-8);
   }
+}
+
+.themeCorner {
+  position: absolute;
+  top: var(--space-4);
+  right: var(--space-4);
 }

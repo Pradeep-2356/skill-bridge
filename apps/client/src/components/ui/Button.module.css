@@ -44,13 +44,13 @@
 
 .primary {
   background: var(--color-primary);
-  color: var(--color-text-inverse);
+  color: var(--color-on-primary);
   box-shadow: var(--shadow-sm);
 }
 
 .primary:hover:not(:disabled) {
   background: var(--color-primary-hover);
-  color: var(--color-text-inverse);
+  color: var(--color-on-primary);
 }
 
 .primary:active:not(:disabled) {
@@ -80,12 +80,12 @@
 
 .danger {
   background: var(--color-danger);
-  color: var(--color-text-inverse);
+  color: var(--color-on-danger);
 }
 
 .danger:hover:not(:disabled) {
   background: var(--color-danger-hover);
-  color: var(--color-text-inverse);
+  color: var(--color-on-danger);
 }
 
 .link {
