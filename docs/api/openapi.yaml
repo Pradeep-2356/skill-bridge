@@ -1,9 +1,9 @@
 openapi: 3.1.0
 info:
   title: SkillBridge API
-  version: 1.0.0-sprint1
+  version: 2.0.0-sprint2
   description: |
-    REST API for SkillBridge (Sprint 1). Every response uses one envelope:
+    REST API for SkillBridge (Sprints 1 and 2). Every response uses one envelope:
     `{ "success": true, "data": …, "meta"? }` or `{ "success": false, "error": { "code", "message", "fields"?, "details"? } }`.
 
     **Authentication** uses two HTTP-only cookies set by login/register:
@@ -20,6 +20,10 @@ tags:
   - name: Dashboard
   - name: Search
   - name: Admin
+  - name: Mentors
+  - name: Requests
+  - name: Matching
+  - name: Notifications
   - name: System
 
 components:
@@ -640,18 +644,242 @@ paths:
   /search/mentors:
     get:
       tags: [Search]
-      summary: Keyword skill search for mentors (SB1/US50)
-      description: Case-insensitive, literal match on skill names and aliases. Excludes the caller and deactivated users.
+      summary: Mentor discovery – search, filter, sort, paginate (SB1/US50, SB2/US1, 3–7, 32–41)
+      description: |
+        Without `q` lists every active mentor. `q` may hold several terms separated by commas, "or", "|" or "/".
+        Matching combines partial, case-insensitive matching on skill names/aliases with the MongoDB text index.
+        Excludes the caller and deactivated users. Empty results include `meta.relatedSkills`.
       parameters:
-        - { name: q, in: query, required: true, schema: { type: string, minLength: 1, maxLength: 60 } }
+        - { name: q, in: query, schema: { type: string, maxLength: 60 } }
+        - { name: category, in: query, schema: { type: string, pattern: '^[a-f0-9]{24}$' } }
+        - {
+            name: proficiency,
+            in: query,
+            schema: { type: string, enum: [beginner, intermediate, advanced, expert] },
+            description: minimum level,
+          }
+        - {
+            name: days,
+            in: query,
+            schema: { type: string, example: '0,2,4' },
+            description: "Monday = 0; in the caller's time zone",
+          }
+        - { name: from, in: query, schema: { type: string, example: '18:00' } }
+        - { name: to, in: query, schema: { type: string, example: '21:00' } }
+        - { name: tzCompatible, in: query, schema: { type: boolean }, description: within 3 hours of the caller's zone }
+        - {
+            name: sort,
+            in: query,
+            schema: { type: string, enum: [relevance, name, newest, availability], default: relevance },
+          }
         - { $ref: '#/components/parameters/Page' }
         - { $ref: '#/components/parameters/Limit' }
       responses:
         '200':
           {
-            description: '{ mentors: [{ id, name, headline, avatarUrl, timezone, matchedSkills[], otherSkills[], teachSkillsCount, availabilitySlots }] } + meta { page, limit, total, totalPages, query }',
+            description: '{ mentors: [{ id, name, headline, avatarUrl, timezone, tzGapHours, matchedSkills[], otherSkills[], teachSkillsCount, availabilitySlots, sharedMinutes, windowMinutes, acceptingRequests, relevance, memberSince }] } + meta { page, limit, total, totalPages, query, terms, sort, appliedFilters, relatedSkills? }',
           }
         '422': { $ref: '#/components/responses/Validation' }
+
+  /skills/suggest:
+    get:
+      tags: [Skills]
+      summary: Search-box suggestions (SB2/US2, US41)
+      parameters:
+        - { name: q, in: query, required: true, schema: { type: string, minLength: 1, maxLength: 60 } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 8, default: 8 } }
+      responses:
+        '200':
+          {
+            description: '{ skills: [{ id, name, status, category, mentorCount }] } – approved skills, best match first',
+          }
+        '422': { $ref: '#/components/responses/Validation' }
+
+  /skills/{id}/related:
+    get:
+      tags: [Skills]
+      summary: Approved skills in the same category, most taught first (SB2/US2)
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200': { description: '{ skills: [{ id, name, category, mentorCount }] }' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /mentors/{id}:
+    get:
+      tags: [Mentors]
+      summary: Mentor profile for discovery (SB2/US8–11, US30)
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200':
+          {
+            description: '{ profile (public fields + acceptingRequests), isSelf, availability { mentorTimezone, viewerTimezone, tzGapHours, inMentorZone[], inViewerZone[], sharedInViewerZone[], sharedMinutes, nextSharedSlot, nextMentorSlot }, exchange { theyCanTeachYou[], youCanTeachThem[] }, openRequests[] }',
+          }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /users/me/accepting-requests:
+    patch:
+      tags: [Mentors]
+      summary: Pause or resume new learning requests (SB2/US43)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              { type: object, required: [acceptingRequests], properties: { acceptingRequests: { type: boolean } } }
+      responses:
+        '200': { description: '{ acceptingRequests }' }
+        '422': { $ref: '#/components/responses/Validation' }
+
+  /match-requests:
+    post:
+      tags: [Requests]
+      summary: Send a learning request (SB2/US12, US23, US24)
+      description: Saved as `queued` and put on the local queue; the worker scores it and makes it `pending` (or `failed` with a reason).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [skillId]
+              properties:
+                mode: { type: string, enum: [direct, auto], default: direct }
+                mentorId: { type: string, description: required for direct requests }
+                skillId: { type: string }
+                message: { type: string, maxLength: 500 }
+      responses:
+        '202': { description: '{ request } with status queued' }
+        '403': { description: MENTOR_UNAVAILABLE – the mentor is not taking requests }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: 'DUPLICATE_REQUEST – details.requestId points to the open request' }
+        '422': { description: 'VALIDATION_ERROR, SELF_REQUEST, SKILL_NOT_TAUGHT or MENTOR_NO_AVAILABILITY' }
+    get:
+      tags: [Requests]
+      summary: My requests (SB2/US13, US26–28)
+      parameters:
+        - { name: box, in: query, schema: { type: string, enum: [incoming, outgoing, all], default: all } }
+        - {
+            name: status,
+            in: query,
+            schema: { type: string, enum: [open, pending, accepted, closed, all], default: all },
+          }
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/Limit' }
+      responses:
+        '200':
+          {
+            description: '{ requests: Request[] } + meta { page, limit, total, totalPages, box, status, counts { open, pending, accepted, closed, all } }',
+          }
+
+  /match-requests/{id}:
+    get:
+      tags: [Requests]
+      summary: Request detail (SB2/US25, US27, US30, US31)
+      description: Learner, mentor (once delivered) or admin. Expired pending requests are closed before the answer.
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200':
+          {
+            description: '{ request: { id, mode, status, role, learner, mentor, partner, skill, learnerLevel, message, score, reasons[], notes[], sharedMinutes, proposedSlot, failure, declineReason, history[], attempts, expiresAt, session, actions } }',
+          }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /match-requests/{id}/accept:
+    patch:
+      tags: [Requests]
+      summary: Mentor accepts – books a 30-minute session (SB2/US14, US31)
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200': { description: '{ request, session }' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { description: INVALID_TRANSITION }
+
+  /match-requests/{id}/decline:
+    patch:
+      tags: [Requests]
+      summary: Mentor declines (SB2/US15)
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object, properties: { reason: { type: string, maxLength: 300 } } }
+      responses:
+        '200': { description: '{ request }' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { description: INVALID_TRANSITION }
+
+  /match-requests/{id}/cancel:
+    patch:
+      tags: [Requests]
+      summary: Learner cancels a queued or pending request (SB2/US16)
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200': { description: '{ request }' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { description: INVALID_TRANSITION }
+
+  /match-requests/{id}/retry:
+    post:
+      tags: [Requests]
+      summary: Learner retries a failed or expired request (SB2/US45)
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '202': { description: '{ request } back to queued' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { description: INVALID_TRANSITION or DUPLICATE_REQUEST }
+
+  /matches/suggestions:
+    get:
+      tags: [Matching]
+      summary: Ranked mentor suggestions with reasons (SB2/US17–22, US42, US43, US46)
+      description: Simplified points formula – skill 35, level 20, shared time 25, time zone 10, skill exchange 10.
+      parameters:
+        - { name: skillId, in: query, schema: { type: string }, description: one of my learning skills; default all }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 10, default: 10 } }
+      responses:
+        '200':
+          {
+            description: '{ learnSkills[], hasAvailability, matches: [{ mentor, skill, wantedLevel, mentorLevel, score, reasons[], notes[], sharedMinutes, tzGapHours, proposedSlot, existingRequest }], reason: { code, reason, nextStep } | null }',
+          }
+        '422': { $ref: '#/components/responses/Validation' }
+
+  /notifications:
+    get:
+      tags: [Notifications]
+      summary: Notification history (SB2/US29)
+      parameters:
+        - { name: unread, in: query, schema: { type: boolean } }
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/Limit' }
+      responses:
+        '200':
+          {
+            description: '{ notifications: [{ id, type, title, body, link, matchRequestId, read, readAt, createdAt }] } + meta { …, unreadCount }',
+          }
+
+  /notifications/unread-count:
+    get:
+      tags: [Notifications]
+      summary: Unread count for the bell (polled every 30 s)
+      responses:
+        '200': { description: '{ unreadCount }' }
+
+  /notifications/{id}/read:
+    patch:
+      tags: [Notifications]
+      summary: Mark one notification as read
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200': { description: '{ notification }' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /notifications/read-all:
+    post:
+      tags: [Notifications]
+      summary: Mark all my notifications as read
+      responses:
+        '200': { description: '{ updated }' }
 
   /admin/users:
     get:
@@ -700,3 +928,97 @@ paths:
         '400': { description: CANNOT_DEACTIVATE_SELF }
         '403': { $ref: '#/components/responses/Forbidden' }
         '422': { $ref: '#/components/responses/Validation' }
+
+  /admin/categories:
+    get:
+      tags: [Admin]
+      summary: Categories with skill, pending and mentor counts (SB2/US47)
+      responses:
+        '200':
+          {
+            description: '{ categories: [{ id, name, slug, icon, description, isActive, order, skillCount, pendingCount, mentorCount }] }',
+          }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: [Admin]
+      summary: Create a category (SB2/US47)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string, minLength: 2, maxLength: 50 }
+                description: { type: string, maxLength: 200 }
+                icon: { type: string, example: code }
+      responses:
+        '201': { description: '{ category }' }
+        '409': { description: NAME_TAKEN }
+        '422': { $ref: '#/components/responses/Validation' }
+
+  /admin/categories/{id}:
+    patch:
+      tags: [Admin]
+      summary: Rename, describe, hide or reorder a category (SB2/US47)
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                description: { type: string }
+                icon: { type: string }
+                isActive: { type: boolean }
+                order: { type: integer, minimum: 0, maximum: 999 }
+      responses:
+        '200': { description: '{ category }' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: NAME_TAKEN }
+    delete:
+      tags: [Admin]
+      summary: Delete an empty category (SB2/US47)
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '204': { $ref: '#/components/responses/NoContent' }
+        '409': { description: CATEGORY_IN_USE – hide it instead }
+
+  /admin/skills:
+    get:
+      tags: [Admin]
+      summary: Skills awaiting review (SB2/US47)
+      parameters:
+        - { name: status, in: query, schema: { type: string, enum: [pending, approved], default: pending } }
+        - { name: q, in: query, schema: { type: string } }
+        - { $ref: '#/components/parameters/Page' }
+        - { $ref: '#/components/parameters/Limit' }
+      responses:
+        '200':
+          {
+            description: '{ skills: [{ id, name, status, aliases, category, createdBy, teachers, learners, createdAt }] } + meta',
+          }
+
+  /admin/skills/{id}:
+    patch:
+      tags: [Admin]
+      summary: Approve, rename, re-categorise or set aliases (SB2/US42, US47)
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status: { type: string, enum: [pending, approved] }
+                name: { type: string }
+                categoryId: { type: string }
+                aliases: { type: array, items: { type: string }, maxItems: 10 }
+      responses:
+        '200': { description: '{ skill }' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: NAME_TAKEN }

@@ -4,7 +4,7 @@
 
 This repository is the final-year B.Tech project, built **frontend-first with a real backend**: a polished React app on top of a working Express + MongoDB API with real authentication, authorization and data storage. Everything runs locally for free; no AWS account, credit card or paid service is needed.
 
-> **Status:** Sprint 1 complete: 50/50 stories and 200/200 workbook tasks implemented and tested. See [`docs/sprints/sprint-1.md`](docs/sprints/sprint-1.md) and the [traceability matrix](docs/sprints/traceability-sprint-1.md). Sprint 2 (discovery and matching) starts after review.
+> **Status:** Sprint 2 complete and waiting for review: 50/50 stories and 200/200 workbook tasks covered (25 tasks have an AWS part deferred). 42 stories are fully implemented; 8 are demonstrated with simplified local logic in place of AWS. See [`docs/sprints/sprint-2.md`](docs/sprints/sprint-2.md) and the [Sprint 2 traceability matrix](docs/sprints/traceability-sprint-2.md). Sprint 1: [`sprint-1.md`](docs/sprints/sprint-1.md) · [traceability](docs/sprints/traceability-sprint-1.md).
 
 ---
 
@@ -17,10 +17,24 @@ This repository is the final-year B.Tech project, built **frontend-first with a 
 | Skills          | Add, edit and remove skills you **teach** (with proficiency) and want to **learn** (with preferred level) from a 99-skill catalogue, or add your own |
 | Availability    | Paint your weekly availability on a half-hour grid (mouse or keyboard), with presets and a time-zone picker                                          |
 | Dashboard       | Profile-strength ring and checklist, your skills, upcoming sessions, recent activity, quick actions                                                  |
-| Search          | Find active mentors by skill keyword (case-insensitive, aliases such as "js" → JavaScript)                                                           |
+| Search          | Find active mentors by skill keyword (case-insensitive, aliases such as "js" → JavaScript) – grown into Discover in Sprint 2                         |
 | Account control | Deactivate (and later reactivate) or permanently delete your account with confirmation                                                               |
 | Admin           | List, search and filter users; view details; deactivate/reactivate accounts with a recorded reason                                                   |
 | Quality         | Accessible forms, loading/empty/error states, toasts, responsive layout, HTTPS mode, security headers                                                |
+
+## Features (Sprint 2)
+
+| Area               | What you can do                                                                                                                                  |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Discover           | Browse mentors before typing; skill suggestions while typing; filter by category, level, days, time window and time-zone fit; sort; page through |
+| Mentor profiles    | Skills and levels, availability shown in **your** time zone, shared free time, time-zone gap, skill-swap hints                                   |
+| Learning requests  | Send a request with a message, see its status and history, cancel or retry it; mentors accept (a session is booked) or decline with a reason     |
+| Suggested mentors  | Ranked list with a transparent points score (skill, level, shared time, time zone, skill swap) and the reasons and gaps behind each match        |
+| Automatic matching | "Match me automatically" queues the request; a background worker picks the best mentor or explains why nobody fits                               |
+| Notifications      | Bell with unread count and a notifications page (checked every 30 seconds – not real-time)                                                       |
+| Mentoring switch   | Mentors can pause new requests from Settings                                                                                                     |
+| Admin catalogue    | Create, rename and remove categories; approve, rename or reject member-added skills                                                              |
+| Dark / light theme | Sun/moon toggle everywhere; follows the system setting on the first visit, remembers your choice, no flash of the wrong theme on load            |
 
 ## Technology
 
@@ -64,7 +78,7 @@ More detail: [architecture](docs/architecture/README.md) · [API](docs/api/READM
 ```bash
 npm install          # installs all three workspaces
 npm run setup        # creates .env with a random JWT secret (never overwrites an existing one)
-npm run db:seed      # categories, 99 skills, demo users, demo sessions (safe to repeat)
+npm run db:seed      # categories, 99 skills, demo users, sessions and requests (safe to repeat)
 npm run dev          # client http://localhost:5173 · API http://localhost:5000 · docs http://localhost:5000/api/docs
 ```
 
@@ -79,6 +93,9 @@ All demo accounts use the password **`Demo@1234`** and the reserved `skillbridge
 | Admin       | `admin@skillbridge.test`       | User management                                                                  |
 | Mentor      | `priya@skillbridge.test`       | Teaches React (expert), JavaScript and UI design; has demo sessions              |
 | Learner     | `arjun@skillbridge.test`       | Wants React and public speaking; teaches Python, so he and Priya can swap skills |
+| Learner     | `meera@skillbridge.test`       | Has a pending request to Priya for React (log in as Priya to accept or decline)  |
+| Learner     | `isla@skillbridge.test`        | Has a pending UI Design request to Priya                                         |
+| Paused      | `mia@skillbridge.test`         | Mentor who is not taking new requests – shown with a notice, cannot be requested |
 | 25 more     | `<firstname>@skillbridge.test` | Members in 6 time zones and 12 categories (e.g. `oliver@`, `sofia@`, `lucas@`)   |
 | Deactivated | `vikram@skillbridge.test`      | Blocked by an admin, never appears in search                                     |
 
@@ -103,7 +120,7 @@ The Vite dev server proxies `/api` and `/uploads` to the API, so the browser see
 | `npm start`                                              | API in production mode, also serving the built client on port 5000 – best for a demo            |
 | `npm test`                                               | Shared + server unit, server integration, and client component tests                            |
 | `npm run test:unit` / `test:integration` / `test:client` | One layer at a time                                                                             |
-| `npm run test:e2e`                                       | Playwright journeys in Chromium, Firefox and WebKit                                             |
+| `npm run test:e2e`                                       | Playwright journeys (Sprint 1 + Sprint 2) in Chromium, Firefox and WebKit                       |
 | `npm run test:coverage`                                  | Server and client coverage reports (`apps/*/coverage/index.html`)                               |
 | `npm run lint` / `npm run format`                        | ESLint / Prettier                                                                               |
 | `npm run db:seed`                                        | Add any missing demo data (never deletes)                                                       |
@@ -113,9 +130,9 @@ The Vite dev server proxies `/api` and `/uploads` to the API, so the browser see
 ## Testing
 
 ```bash
-npm test                         # 231 unit, integration and component tests
+npm test                         # 378 unit, integration and component tests
 npx playwright install           # once, downloads browsers
-npm run test:e2e                 # 7 end-to-end tests (needs MongoDB running)
+npm run test:e2e                 # 11 end-to-end tests (needs MongoDB running)
 ```
 
 - Integration tests use **mongodb-memory-server**: a throwaway MongoDB is started automatically (it downloads a ~100 MB binary the first time) and your development data is never touched.
@@ -127,14 +144,18 @@ Latest results and coverage: [`docs/testing/README.md`](docs/testing/README.md).
 
 `npm run setup` creates `.env` from [`.env.example`](.env.example). The important ones:
 
-| Variable                                      | Default                                     | Purpose                                                                                         |
-| --------------------------------------------- | ------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| `MONGODB_URI`                                 | `mongodb://127.0.0.1:27017/skillbridge_dev` | Development database                                                                            |
-| `JWT_ACCESS_SECRET`                           | random (setup)                              | Signs access tokens; the server refuses to start if it is missing or shorter than 32 characters |
-| `ACCESS_TOKEN_TTL` / `REFRESH_TOKEN_TTL_DAYS` | `15m` / `7`                                 | Token lifetimes                                                                                 |
-| `CLIENT_ORIGIN`                               | `http://localhost:5173`                     | The only origin CORS allows                                                                     |
-| `MAIL_TRANSPORT`                              | `smtp`                                      | `smtp` (Mailpit), `console` or `memory`                                                         |
-| `UPLOAD_DIR` / `MAX_AVATAR_MB`                | `apps/server/uploads` / `2`                 | Profile photo storage                                                                           |
+| Variable                                          | Default                                     | Purpose                                                                                         |
+| ------------------------------------------------- | ------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `MONGODB_URI`                                     | `mongodb://127.0.0.1:27017/skillbridge_dev` | Development database                                                                            |
+| `JWT_ACCESS_SECRET`                               | random (setup)                              | Signs access tokens; the server refuses to start if it is missing or shorter than 32 characters |
+| `ACCESS_TOKEN_TTL` / `REFRESH_TOKEN_TTL_DAYS`     | `15m` / `7`                                 | Token lifetimes                                                                                 |
+| `CLIENT_ORIGIN`                                   | `http://localhost:5173`                     | The only origin CORS allows                                                                     |
+| `MAIL_TRANSPORT`                                  | `smtp`                                      | `smtp` (Mailpit), `console` or `memory`                                                         |
+| `UPLOAD_DIR` / `MAX_AVATAR_MB`                    | `apps/server/uploads` / `2`                 | Profile photo storage                                                                           |
+| `MATCH_WORKER_INTERVAL_MS`                        | `1000`                                      | How often the in-process matching worker checks the local queue                                 |
+| `EXPIRY_JOB_INTERVAL_MS`                          | `60000`                                     | How often pending requests older than 7 days are expired                                        |
+| `QUEUE_VISIBILITY_SECONDS` / `QUEUE_MAX_RECEIVES` | `30` / `3`                                  | Local queue: hide a message while processing; dead-letter it after 3 tries                      |
+| `MATCH_FAILURE_RATE`                              | `0`                                         | Demo only: make some automatic matches fail on purpose so Retry can be shown                    |
 
 ## Local HTTPS (optional)
 
@@ -164,4 +185,26 @@ npm run db:reset     # type "reset" to confirm
 
 ## What is real, simplified and deferred
 
-Everything in Sprint 1 is real and stored in MongoDB. Two parts are simplified on purpose: emails go to a local inbox (Mailpit), and photos are stored on local disk behind an adapter. Sessions shown in Sprint 1 come from the seed script and carry a **Demo** badge; real sessions are created by matching in Sprint 2. AWS (S3, SES, SQS, Lambda), Redis, WebSockets and WebRTC are deferred to next semester. Details: [architecture → future cloud integration](docs/architecture/README.md#future-cloud-integration).
+- **Real (stored in MongoDB):**
+  - all Sprint 1 features
+  - search and filters
+  - mentor profiles
+  - learning requests and their full state machine
+  - sessions created on accept
+  - notifications
+  - admin catalogue
+  - theme preference
+- **Simplified on purpose:**
+  - Matching uses a fixed, explained points formula, not machine learning.
+  - The "queue" is a MongoDB collection that copies SQS behaviour, with an in-process worker in place of Lambda.
+  - Notifications are checked every 30 seconds instead of being pushed in real time.
+  - Emails go to a local inbox (Mailpit).
+  - Photos are stored on local disk.
+- **Deferred:**
+  - AWS (S3, SES, SQS, Lambda)
+  - Redis
+  - WebSockets
+  - WebRTC
+  - Sprint 3 (live sessions)
+
+Details: [Sprint 2 report](docs/sprints/sprint-2.md) and [architecture → future cloud integration](docs/architecture/README.md#future-cloud-integration).

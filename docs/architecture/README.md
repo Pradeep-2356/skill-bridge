@@ -1,6 +1,6 @@
 # Architecture
 
-SkillBridge is an npm-workspaces monorepo with three packages: a React single-page app (`apps/client`), an Express REST API (`apps/server`) and a shared package (`packages/shared`) holding constants and Zod validation schemas that both sides import. MongoDB stores all data. This document reflects the approved Stage 3 proposal and what was actually built in Sprint 1.
+SkillBridge is an npm-workspaces monorepo with three packages: a React single-page app (`apps/client`), an Express REST API (`apps/server`) and a shared package (`packages/shared`) holding constants and Zod validation schemas that both sides import. MongoDB stores all data. This document reflects the approved Stage 3 proposal and what was actually built in Sprints 1 and 2. Sprint 2 sections are near the end.
 
 ```mermaid
 flowchart LR
@@ -53,7 +53,7 @@ Errors: services throw `AppError(status, code, message, { fields, details })`. E
 
 ## Database
 
-Six collections in Sprint 1: `users` (with embedded teach/learn skills and availability), `categories`, `skills`, `refreshtokens`, `passwordresets`, `sessions`. Full field list, rules and indexes: [database/README.md](../database/README.md).
+Six collections in Sprint 1: `users` (with embedded teach/learn skills and availability), `categories`, `skills`, `refreshtokens`, `passwordresets`, `sessions`. Sprint 2 adds `matchrequests`, `notifications` and `queuemessages`, a skill text index and `users.acceptingRequests`. Full field list, rules and indexes: [database/README.md](../database/README.md).
 
 ## Authentication flow
 
@@ -99,14 +99,76 @@ The client guards (`ProtectedRoute`, `GuestRoute`, `AdminRoute`) only improve th
 
 Helmet headers with a strict Content-Security-Policy, HSTS in HTTPS mode, CORS limited to `CLIENT_ORIGIN`, 100 kB JSON body limit, bcrypt cost 12, opaque hashed refresh and reset tokens, same message for unknown email and wrong password (plus dummy hash for equal timing), file uploads checked by size, MIME type **and** file signature, regex-escaped search input, a configuration check that refuses weak JWT secrets.
 
+## Sprint 2: skill and mentor discovery (SB2/US1–7, 32–42)
+
+```mermaid
+flowchart LR
+  Q[q = "react, vue"] --> SAN[sanitizeSearchText + splitSearchTerms<br/>packages/shared/src/search.js]
+  SAN --> P[Partial match<br/>regex on normalizedName / aliases]
+  SAN --> TX[MongoDB $text<br/>skill_text index]
+  P --> SK[Matching skills + match score]
+  TX --> SK
+  SK --> U[Active users teaching them<br/>≠ searcher, ≤ 500 candidates]
+  U --> FL[Filters: category · min level ·<br/>availability window · ±3 h zone]
+  FL --> RK[Relevance / name / newest / shared time]
+  RK --> PG[Page ≤ 50 + total + applied filters]
+```
+
+`searchService.searchMentors` runs the pipeline; filters that need time-zone maths run in Node on at most 500 candidates, which is fast enough for a demo-sized community and keeps the queries simple. An empty result returns `relatedSkills` so the page can offer alternatives. The Discover page keeps every setting in the URL.
+
+## Sprint 2: learning requests, local queue and matching (SB2/US12–31, 43–50)
+
+```mermaid
+sequenceDiagram
+  participant L as Learner (React)
+  participant API as Express API
+  participant DB as MongoDB
+  participant Q as Local queue (queuemessages)
+  participant W as Worker (in API process)
+  participant M as Mentor (React)
+  L->>API: POST /match-requests
+  API->>DB: matchrequests (status queued)
+  API->>Q: send({ requestId })
+  API-->>L: 202 queued
+  W->>Q: receive() – hidden 30 s
+  W->>DB: score, proposedSlot → status pending
+  W->>DB: notifications (mentor, learner if auto)
+  W->>Q: remove(message)
+  M->>API: GET /notifications/unread-count (every 30 s)
+  M->>API: PATCH /match-requests/:id/accept
+  API->>DB: status accepted + sessions (source: match)
+  API->>DB: notifications (both)
+```
+
+- **State machine** (`packages/shared/src/requests.js`): every change names who may make it; the API rejects anything else with 409. The UI shows only the buttons `request.actions` allows, but the server re-checks.
+- **Duplicates** are blocked twice: a service check (409 with the existing id) and the partial unique index on `matchrequests`.
+- **Matching** (`services/matching/scoring.js`, pure functions): skill 35 + level 20 + shared time 25 + time-zone 10 + skill swap 10 = 100. Ties: more shared time, then name. Candidates must be active, accepting requests, have availability and teach the skill at or above the wanted level (direct requests skip the level rule because the learner chose the mentor). "Find me a mentor" also needs shared time. When nobody fits, `explainNoMatch` returns one of six reason codes with a next step.
+- **Time zones** (`packages/shared/src/time.js`): weekly slots → "week minutes" in UTC with the built-in `Intl` API; overlaps, the gap between zones (round the clock), and the earliest shared 30-minute slot ≥ 24 h ahead.
+- **Queue and worker** (`integrations/queue/localQueue.js`, `workers/matchWorker.js`): MongoDB-backed, same contract as the planned SQS adapter (`send`, `receive` with visibility timeout, `remove`, `release`, dead letter after 3 receives). The worker drains every second and right after each new request; an expiry job runs every 60 s. Tests call `worker.drain()` directly so nothing depends on timers.
+- **Notifications** are documents written by the services on every event; the client polls the unread count every 30 s while the tab is visible and on every route change. This is a simplified stand-in for push.
+
+## Sprint 2: light and dark theme (additional requirement)
+
+| Piece          | What it does                                                                                                                                                                                                                                                       | File                                  |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------- |
+| Design tokens  | Light values on `:root`; `:root[data-theme='dark']` redefines only colour and shadow tokens (≈ 60 variables). Every component uses tokens, so it supports both themes automatically.                                                                               | `src/styles/tokens.css`               |
+| No-flash start | A tiny classic script in `<head>` reads `localStorage['sb-theme']` (`system`/`light`/`dark`), resolves `system` with `prefers-color-scheme`, and sets `<html data-theme>` before the first paint. It is a file, not inline, because the CSP blocks inline scripts. | `public/theme-init.js`, `index.html`  |
+| State          | `ThemeProvider` (React context) holds `preference` and the resolved `theme`, follows OS changes while on `system`, writes `localStorage` (wrapped in try/catch), and adds a 250 ms `theme-transition` class only while switching.                                  | `src/context/ThemeContext.jsx`        |
+| Controls       | Sun/moon `ThemeToggle` in the app top bar, public header and auth screens (announces "Dark theme on"); Settings → Appearance offers System / Light / Dark.                                                                                                         | `src/features/theme/*`                |
+| Brand panel    | The auth-screen brand gradient and its chips use `--brand-*` tokens that stay the same in both themes.                                                                                                                                                             | `tokens.css`, `AuthLayout.module.css` |
+
+**Adding a component later:** use only `var(--color-…)`, `var(--shadow-…)` and `var(--brand-…)` tokens — never hex or rgb values. If a new colour is needed, add it to both the `:root` block and the dark block. The theme tests fail if a light colour token has no dark value, and they check WCAG AA contrast for the main text/background pairs.
+
 ## Future cloud integration
 
 Each local piece sits behind an interface so next semester can swap it without touching services:
 
-| Local now                                               | Next semester                                                | Change                                        |
-| ------------------------------------------------------- | ------------------------------------------------------------ | --------------------------------------------- |
-| `integrations/storage/localDiskStorage.js` + `/uploads` | Amazon S3 + CloudFront, pre-signed URLs                      | New adapter with the same `save` / `remove`   |
-| `integrations/mail` (Mailpit)                           | Amazon SES                                                   | New transport                                 |
-| Seeded demo sessions                                    | Sessions created on match acceptance (SB2) and booking (SB3) | New services; `sessions` collection unchanged |
-| — (Sprint 2)                                            | SQS + Lambda matchmaking, Redis, WebSockets, WebRTC          | Planned in Stage 3, not implemented now       |
-| Local HTTPS via mkcert                                  | Managed TLS at deployment                                    | Infrastructure only                           |
+| Local now                                               | Next semester                                       | Change                                                              |
+| ------------------------------------------------------- | --------------------------------------------------- | ------------------------------------------------------------------- |
+| `integrations/storage/localDiskStorage.js` + `/uploads` | Amazon S3 + CloudFront, pre-signed URLs             | New adapter with the same `save` / `remove`                         |
+| `integrations/mail` (Mailpit)                           | Amazon SES                                          | New transport                                                       |
+| `integrations/queue/localQueue.js` (MongoDB)            | Amazon SQS (+ dead-letter queue)                    | New adapter with the same `send` / `receive` / `remove` / `release` |
+| `workers/matchWorker.js` calling `processRequest()`     | AWS Lambda triggered by SQS                         | Wrap `processRequest(requestId)` in a handler                       |
+| Notification polling every 30 s                         | Push (WebSockets / SNS)                             | Same `notifications` collection; new delivery                       |
+| —                                                       | Redis caching, WebRTC sessions, booking (Sprint 3+) | Not started                                                         |
+| Local HTTPS via mkcert                                  | Managed TLS at deployment                           | Infrastructure only                                                 |

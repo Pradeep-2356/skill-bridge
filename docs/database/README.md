@@ -12,7 +12,27 @@ erDiagram
   SESSIONS }o--|| SKILLS : "about"
   SESSIONS }o--o| USERS : "learner"
   SESSIONS }o--o| USERS : "mentor"
+  MATCHREQUESTS }o--|| USERS : "learner"
+  MATCHREQUESTS }o--o| USERS : "mentor"
+  MATCHREQUESTS }o--|| SKILLS : "skill"
+  MATCHREQUESTS |o--o| SESSIONS : "session (on accept)"
+  NOTIFICATIONS }o--|| USERS : "user"
+  NOTIFICATIONS }o--o| MATCHREQUESTS : "about"
+  QUEUEMESSAGES }o--o| MATCHREQUESTS : "body.requestId"
 ```
+
+## Sprint 2 changes at a glance
+
+| Change                                                                              | Collection      | Compatibility with Sprint 1 data                                                                          |
+| ----------------------------------------------------------------------------------- | --------------- | --------------------------------------------------------------------------------------------------------- |
+| New field `acceptingRequests` (Boolean, default `true`)                             | `users`         | Old documents have no field; every query uses `{ $ne: false }`, so they count as accepting. No migration. |
+| New text index `skill_text` on `name` (weight 10), `aliases` (5), `description` (1) | `skills`        | Built automatically at server start (`createIndexes`).                                                    |
+| New collection                                                                      | `matchrequests` | —                                                                                                         |
+| New collection                                                                      | `notifications` | —                                                                                                         |
+| New collection                                                                      | `queuemessages` | —                                                                                                         |
+| `sessions.source: 'match'` and `sessions.matchRequest` now used                     | `sessions`      | The fields existed since Sprint 1; demo rows are unchanged.                                               |
+
+No existing document needs rewriting: `npm run db:seed` adds the Sprint 2 demo data to an existing Sprint 1 database without touching what is there.
 
 ## `users`
 
@@ -67,8 +87,42 @@ erDiagram
 
 `learner`, `mentor` (ObjectId → users, null after account deletion; must differ) · `skill` · `startsAt` (UTC) · `durationMinutes` (30) · `status` scheduled/completed/cancelled · `source` demo/match · `matchRequest` (Sprint 2). **Indexes:** `{ learner: 1, startsAt: 1 }`, `{ mentor: 1, startsAt: 1 }`. Seven demo rows are seeded.
 
+## `matchrequests` (Sprint 2)
+
+| Field                      | Type                                                            | Rules                                                                                |
+| -------------------------- | --------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `learner`                  | ObjectId → users                                                | Required                                                                             |
+| `mentor`                   | ObjectId → users                                                | Chosen (direct) or set by the matcher (auto); never equal to `learner` (model check) |
+| `skill`                    | ObjectId → skills                                               | For direct requests the mentor must teach it                                         |
+| `mode`                     | `direct` \| `auto`                                              |                                                                                      |
+| `learnerLevel`             | beginner/intermediate/advanced                                  | Copied from the learner's learning skill, default beginner                           |
+| `message`                  | String ≤ 500                                                    |                                                                                      |
+| `status`                   | queued, pending, accepted, declined, cancelled, expired, failed | Changed only through the state machine (`packages/shared/src/requests.js`)           |
+| `active`                   | Boolean                                                         | Kept equal to "status is queued, pending or accepted" by a pre-validate hook         |
+| `score`                    | `{ total, skill, level, availability, timezone, exchange }`     | 0–100, written by the matcher                                                        |
+| `reasons`, `notes`         | [String]                                                        | Plain-English strengths and gaps                                                     |
+| `sharedMinutes`            | Number                                                          | Weekly overlap at processing time                                                    |
+| `proposedSlot`             | `{ startsAt, endsAt, shared }`                                  | Earliest 30-minute slot ≥ 24 h ahead within 7 days                                   |
+| `failure`                  | `{ code, reason, nextStep }`                                    | Why matching failed (SB2/US46)                                                       |
+| `declineReason`            | String ≤ 300                                                    |                                                                                      |
+| `history`                  | [`{ status, at, by, note }`]                                    | Every transition; `by` = learner, mentor, system, admin                              |
+| `attempts`                 | Number                                                          | +1 per retry                                                                         |
+| `deliveredAt`, `expiresAt` | Date                                                            | Set when pending; `expiresAt` = delivered + 7 days                                   |
+| `session`                  | ObjectId → sessions                                             | Set on accept                                                                        |
+
+**Indexes:** `{ learner, status, updatedAt }`, `{ mentor, status, updatedAt }`, `{ status, expiresAt }` (expiry job) and the **partial unique index** `one_active_request` on `{ learner, mentor, skill }` where `active: true` – the database itself refuses a second active request between the same people for the same skill (SB2/US24).
+
+## `notifications` (Sprint 2)
+
+`user` · `type` (request_received, request_accepted, request_declined, request_cancelled, request_expired, match_found, match_confirmed, match_failed) · `title` ≤ 140 · `body` ≤ 500 · `link` · `matchRequest` · `readAt` (null = unread) · timestamps. **Indexes:** `{ user, createdAt: -1 }`, `{ user, readAt }`.
+
+## `queuemessages` (Sprint 2)
+
+The local stand-in for Amazon SQS. `queue` · `body` (`{ requestId }`) · `status` ready/dead · `visibleAt` (hidden for 30 s after a receive) · `receiveCount` · `lastError`. After 3 failed receives a message becomes `dead` and its request is marked failed with `PROCESSING_FAILED`. **Index:** `{ queue, status, visibleAt }`.
+
 ## Data lifecycle
 
 - **Deactivate** keeps all data; the account is hidden and cannot log in.
 - **Delete** removes the user, their refresh/reset tokens and photo file; sessions keep the other participant and show "a former member"; custom skills stay in the catalogue with `createdBy: null`.
-- **Seeding** is idempotent: `npm run db:seed` only inserts what is missing.
+- **Seeding** is idempotent: `npm run db:seed` only inserts what is missing. Sprint 2 adds: Mia paused (not taking requests), a pending custom skill "Svelte Kit" to review, and four learning requests created through the real services (Meera → Priya and Isla → Priya pending; Arjun → Oliver accepted with a booked session; Arjun → Meera declined).
+- **Requests** are never deleted. Deleting an account keeps requests for the other person (the deleted side shows as missing).
