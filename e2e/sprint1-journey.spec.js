@@ -66,8 +66,9 @@ test('a new member registers, builds a profile, finds a mentor and logs out', as
   // Search for a mentor (SB1/US50) and open a profile (SB1/US46)
   await page.getByLabel('Search skills or mentors').fill('react');
   await page.keyboard.press('Enter');
-  await expect(page).toHaveURL(/\/search\?q=react/);
-  await expect(page.getByText(/mentors? teach(es)? skills matching “react”/)).toBeVisible();
+  // Sprint 2 moved search to /discover (the old /search address still redirects).
+  await expect(page).toHaveURL(/\/discover\?q=react/);
+  await expect(page.getByTestId('result-count')).toContainText('for “react”');
   await expect(page.getByRole('link', { name: 'Priya Sharma', exact: true })).toBeVisible();
   await expect(page.getByText('Vikram Shah')).toHaveCount(0); // deactivated by an admin
   await page.getByRole('link', { name: "View Priya Sharma's profile" }).click();

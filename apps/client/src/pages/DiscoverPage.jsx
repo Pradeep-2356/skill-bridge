@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router';
 import { SearchX, Compass, SlidersHorizontal, Sparkles, FilterX } from 'lucide-react';
 import { SEARCH_SORTS } from '@skillbridge/shared';
@@ -66,6 +66,14 @@ export default function DiscoverPage() {
   const state = readParams(params);
   const { q, filters, sort, page } = state;
   const [showFilters, setShowFilters] = useState(false);
+  // Controls show the new value at once; the URL (and the search) follows a moment later.
+  const [draft, setDraft] = useState(filters);
+  const urlKey = params.toString();
+  useEffect(() => setDraft(readParams(new URLSearchParams(urlKey)).filters), [urlKey]);
+  const changeFilters = (f) => {
+    setDraft(f);
+    update({ filters: f });
+  };
   useDocumentTitle(q ? `“${q}” mentors` : 'Discover mentors');
 
   const categories = useApi(() => skillsApi.categories(), []);
@@ -88,7 +96,10 @@ export default function DiscoverPage() {
   const { data, meta, loading, error, reload } = useApi(() => searchApi.mentors(query), [JSON.stringify(query)]);
 
   const update = (patch) => setParams(writeParams({ ...state, page: 1, ...patch }));
-  const clearFilters = () => update({ filters: EMPTY_FILTERS });
+  const clearFilters = () => {
+    setDraft(EMPTY_FILTERS);
+    update({ filters: EMPTY_FILTERS });
+  };
   const filtered = hasFilters(filters);
   const categoryList = categories.data?.categories ?? [];
   const activeCount = [
@@ -127,9 +138,9 @@ export default function DiscoverPage() {
           <div className={`${styles.filterBox} ${showFilters ? styles.filterBoxOpen : ''}`}>
             <FilterPanel
               id="discover-filters"
-              filters={filters}
+              filters={draft}
               categories={categoryList}
-              onChange={(f) => update({ filters: f })}
+              onChange={changeFilters}
               onClear={clearFilters}
             />
           </div>
@@ -158,12 +169,7 @@ export default function DiscoverPage() {
               </select>
             </label>
           </div>
-          <ActiveFilters
-            filters={filters}
-            categories={categoryList}
-            onChange={(f) => update({ filters: f })}
-            onClear={clearFilters}
-          />
+          <ActiveFilters filters={draft} categories={categoryList} onChange={changeFilters} onClear={clearFilters} />
 
           {loading || (!data && !error) ? (
             <div className={cardStyles.grid}>
