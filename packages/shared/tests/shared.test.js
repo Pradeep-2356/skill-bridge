@@ -246,9 +246,14 @@ describe('search helpers (SB1/US50)', () => {
     expect(pattern.test('c tips')).toBe(false);
   });
 
-  it('requires a non-empty query and clamps page size', () => {
-    expect(mentorSearchQuerySchema.safeParse({ q: '   ' }).success).toBe(false);
-    expect(mentorSearchQuerySchema.parse({ q: 'react' })).toEqual({ q: 'react', page: 1, limit: 12 });
+  it('allows an empty query (SB2 mentor listing) and clamps page size', () => {
+    expect(mentorSearchQuerySchema.parse({ q: '   ' }).q).toBe('');
+    expect(mentorSearchQuerySchema.parse({ q: 'react' })).toEqual({
+      q: 'react',
+      sort: 'relevance',
+      page: 1,
+      limit: 12,
+    });
     expect(mentorSearchQuerySchema.safeParse({ q: 'react', limit: '500' }).success).toBe(false);
   });
 });

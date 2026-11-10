@@ -103,3 +103,27 @@
   font-weight: var(--weight-semibold);
   text-decoration: none;
 }
+
+.facts li {
+  flex-wrap: wrap;
+}
+
+.factNote {
+  color: var(--color-text-muted);
+}
+
+.factGood {
+  color: var(--color-success);
+}
+
+.status {
+  align-self: flex-start;
+}
+
+.footer {
+  margin-top: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+}

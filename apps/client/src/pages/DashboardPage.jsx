@@ -63,7 +63,7 @@ export default function DashboardPage() {
         title={`${greeting(tz)}, ${firstName}`}
         subtitle="Here’s what’s next for you on SkillBridge."
         actions={
-          <Button leftIcon={Search} to="/search">
+          <Button leftIcon={Search} to="/discover">
             Find a mentor
           </Button>
         }
@@ -152,7 +152,7 @@ export default function DashboardPage() {
                   title="No sessions scheduled"
                   description="Find a mentor who teaches what you want to learn. Booking arrives with matching in the next release."
                   action={
-                    <Button size="sm" variant="secondary" to="/search">
+                    <Button size="sm" variant="secondary" to="/discover">
                       Browse mentors
                     </Button>
                   }
@@ -227,7 +227,7 @@ export default function DashboardPage() {
             <Card title="Quick actions">
               <ul role="list" className={styles.actions}>
                 <li>
-                  <Link to="/search" className={styles.action}>
+                  <Link to="/discover" className={styles.action}>
                     <Search size={20} aria-hidden="true" />
                     <span>
                       <strong>Find a mentor</strong>

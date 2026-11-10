@@ -79,6 +79,8 @@ const userSchema = new Schema(
     teachSkills: { type: [teachSkillSchema], default: [] },
     learnSkills: { type: [learnSkillSchema], default: [] },
     availability: { type: [availabilitySlotSchema], default: [] },
+    /** SB2/US43 – mentors can pause new learning requests. Missing on Sprint 1 data = true. */
+    acceptingRequests: { type: Boolean, default: true },
     /** Bumped on password change/reset so older access tokens stop working. */
     tokenVersion: { type: Number, default: 0 },
     lastLoginAt: { type: Date },

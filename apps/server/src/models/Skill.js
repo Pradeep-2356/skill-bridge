@@ -22,6 +22,11 @@ const skillSchema = new mongoose.Schema(
 
 skillSchema.index({ aliases: 1 });
 skillSchema.index({ category: 1, status: 1 });
+// SB2/US33, US34 – full-text index over the searchable skill metadata.
+skillSchema.index(
+  { name: 'text', aliases: 'text', description: 'text' },
+  { name: 'skill_text', weights: { name: 10, aliases: 5, description: 1 }, default_language: 'english' },
+);
 
 // Keep normalizedName/aliases consistent whatever the caller passes in.
 skillSchema.pre('validate', function normalize() {

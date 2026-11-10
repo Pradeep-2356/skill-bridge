@@ -68,7 +68,7 @@ export default function SessionsPage() {
                   ? 'When you have a session scheduled, it will appear here.'
                   : 'Sessions you have taken part in will appear here.'
               }
-              action={scope === 'upcoming' ? <Button to="/search">Find a mentor</Button> : null}
+              action={scope === 'upcoming' ? <Button to="/discover">Find a mentor</Button> : null}
             />
           ) : (
             <>

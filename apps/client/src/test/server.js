@@ -6,7 +6,17 @@ import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
 
 export const API = '*/api/v1';
-export const server = setupServer();
+/**
+ * Requests every signed-in page makes in the background (notification badge,
+ * category list for filters). Tests override them with server.use(...) when needed.
+ */
+const defaults = [
+  http.get('*/api/v1/notifications/unread-count', () => HttpResponse.json({ success: true, data: { unreadCount: 0 } })),
+  http.get('*/api/v1/categories', () => HttpResponse.json({ success: true, data: { categories: [] } })),
+  http.get('*/api/v1/skills/suggest', () => HttpResponse.json({ success: true, data: { skills: [] } })),
+];
+
+export const server = setupServer(...defaults);
 
 export const ok = (data, meta) => HttpResponse.json({ success: true, data, ...(meta ? { meta } : {}) });
 export const fail = (status, code, message, extra = {}) =>

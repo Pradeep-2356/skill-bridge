@@ -15,9 +15,11 @@
   --color-teach: #0f766e;
   --color-teach-border: #14b8a6;
   --color-teach-tint: #f0fdfa;
+  --color-teach-tint-strong: #ccfbf1;
   --color-learn: #b45309;
   --color-learn-border: #f59e0b;
   --color-learn-tint: #fffbeb;
+  --color-learn-tint-strong: #fef3c7;
 
   /* Neutrals (slate) */
   --color-bg: #f8fafc;
@@ -29,6 +31,8 @@
   --color-text-secondary: #475569;
   --color-text-muted: #64748b;
   --color-text-inverse: #ffffff;
+  --color-on-primary: #ffffff;
+  --color-surface-raised: #ffffff; /* dropdowns, menus, modals */
 
   /* Feedback */
   --color-success: #15803d;
@@ -83,6 +87,9 @@
   --shadow-md: 0 4px 12px rgb(15 23 42 / 0.08);
   --shadow-lg: 0 16px 40px rgb(15 23 42 / 0.16);
   --focus-ring: 0 0 0 2px var(--color-surface), 0 0 0 4px var(--color-primary);
+  --color-primary-ring: rgb(79 70 229 / 0.18);
+  --color-danger-ring: rgb(185 28 28 / 0.15);
+  --shadow-focus: 0 0 0 3px var(--color-primary-ring);
 
   /* Layout */
   --sidebar-width: 248px;
@@ -97,6 +104,7 @@
   --duration-base: 200ms;
 
   --z-sticky: 20;
+  --z-dropdown: 30;
   --z-drawer: 40;
   --z-modal: 50;
   --z-toast: 60;

@@ -108,3 +108,23 @@ export function summariseSlots(slots = []) {
 export function pluralise(count, word, plural = `${word}s`) {
   return `${count} ${count === 1 ? word : plural}`;
 }
+
+/** 210 → "3 h 30 min", 45 → "45 min", 0 → "0 min" (SB2 shared-time labels). */
+export function formatMinutes(minutes = 0) {
+  const h = Math.floor(minutes / 60);
+  const m = Math.round(minutes % 60);
+  if (!h) return `${m} min`;
+  return m ? `${h} h ${m} min` : `${h} h`;
+}
+
+/** 0 → "Same time zone", 1.5 → "1 h 30 min apart" (SB2/US7, US21). */
+export function formatZoneGap(hours = 0) {
+  if (!hours) return 'Same time zone';
+  return `${formatMinutes(Math.round(hours * 60))} apart`;
+}
+
+/** Half-hour times for selects: "00:00" … "24:00". */
+export const HALF_HOURS = Array.from({ length: 49 }, (_, i) => {
+  const h = String(Math.floor(i / 2)).padStart(2, '0');
+  return `${h}:${i % 2 ? '30' : '00'}`;
+});

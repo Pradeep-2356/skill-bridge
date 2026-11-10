@@ -1,4 +1,5 @@
 import * as skillService from '../services/skillService.js';
+import * as discovery from '../services/discoveryService.js';
 import { sendSuccess } from '../utils/respond.js';
 
 export async function listCategories(_req, res) {
@@ -29,4 +30,14 @@ export function forList(kind) {
       return res.status(204).end();
     },
   };
+}
+
+/** SB2/US2, US41 – search-box suggestions. */
+export async function suggest(req, res) {
+  return sendSuccess(res, { skills: await discovery.suggestSkills(req.validated.query) });
+}
+
+/** SB2/US2 – skills related to one skill (same category). */
+export async function related(req, res) {
+  return sendSuccess(res, { skills: await discovery.relatedSkills(req.validated.params.id) });
 }

@@ -20,6 +20,7 @@ import {
   deactivateAccountSchema,
   deleteAccountSchema,
   mentorSearchQuerySchema,
+  skillSuggestQuerySchema,
   sessionsQuerySchema,
   adminUserQuerySchema,
   adminStatusSchema,
@@ -73,6 +74,8 @@ export function buildApiRouter(config) {
   const learn = skills.forList('learn');
   secured.get('/categories', skills.listCategories);
   secured.get('/skills', validate({ query: skillCatalogQuerySchema }), skills.catalog);
+  secured.get('/skills/suggest', validate({ query: skillSuggestQuerySchema }), skills.suggest); // SB2/US2, 41
+  secured.get('/skills/:id/related', validate({ params: idParam }), skills.related); // SB2/US2
   secured.get('/users/me/skills', skills.mySkills);
   secured.post('/users/me/teach-skills', validate({ body: teachSkillCreateSchema }), teach.add);
   secured.patch(

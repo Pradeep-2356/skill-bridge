@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Outlet, useLocation, useRouteError } from 'react-router';
+import { Navigate, Outlet, useLocation, useRouteError } from 'react-router';
 import { AuthProvider } from '../context/AuthContext.jsx';
 import { PublicLayout } from '../layouts/PublicLayout.jsx';
 import { AuthLayout } from '../layouts/AuthLayout.jsx';
@@ -20,7 +20,7 @@ import {
 import SkillsPage from '../pages/SkillsPage.jsx';
 import AvailabilityPage from '../pages/AvailabilityPage.jsx';
 import SessionsPage from '../pages/SessionsPage.jsx';
-import SearchPage from '../pages/SearchPage.jsx';
+import DiscoverPage from '../pages/DiscoverPage.jsx';
 import SettingsPage from '../pages/SettingsPage.jsx';
 import { AdminUsersPage, AdminUserDetailPage } from '../pages/admin/AdminPages.jsx';
 import NotFoundPage from '../pages/NotFoundPage.jsx';
@@ -31,6 +31,12 @@ function ScrollToTop() {
     if (typeof window.scrollTo === 'function') window.scrollTo(0, 0);
   }, [pathname]);
   return null;
+}
+
+/** Sprint 1 used /search; keep old links working by forwarding to /discover (SB2). */
+function SearchRedirect() {
+  const { search } = useLocation();
+  return <Navigate to={`/discover${search}`} replace />;
 }
 
 function Root() {
@@ -97,7 +103,8 @@ export const routes = [
               { path: '/skills', element: <SkillsPage /> },
               { path: '/availability', element: <AvailabilityPage /> },
               { path: '/sessions', element: <SessionsPage /> },
-              { path: '/search', element: <SearchPage /> },
+              { path: '/discover', element: <DiscoverPage /> },
+              { path: '/search', element: <SearchRedirect /> },
               { path: '/settings', element: <SettingsPage /> },
               {
                 path: '/admin',

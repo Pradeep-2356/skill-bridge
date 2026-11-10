@@ -155,9 +155,12 @@ describe('keyword search (SB1/US50)', () => {
     expect(res.body.meta.total).toBe(0);
   });
 
-  it('rejects an empty or over-long query', async () => {
+  it('lists every active mentor for an empty query and rejects an over-long one (changed in SB2: mentor listing)', async () => {
+    await world();
     const { agent } = await signedInUser(ctx.app);
-    expect((await agent.get('/api/v1/search/mentors?q=%20%20')).status).toBe(422);
+    const res = await agent.get('/api/v1/search/mentors?q=%20%20');
+    expect(res.status).toBe(200);
+    expect(res.body.data.mentors.map((m) => m.name)).toEqual(['Priya', 'Jack']); // expert ranks above advanced
     expect((await agent.get(`/api/v1/search/mentors?q=${'x'.repeat(61)}`)).status).toBe(422);
   });
 });

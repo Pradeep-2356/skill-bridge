@@ -101,10 +101,16 @@ describe('Search page (SB1/US50)', () => {
     availabilitySlots: 3,
   };
 
-  it('suggests popular skills before the user searches', async () => {
-    renderApp('/search', { user: me });
-    expect(await screen.findByText(/what would you like to learn/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Guitar' })).toBeInTheDocument();
+  it('forwards the old /search address to Discover and lists mentors (SB2 mentor listing)', async () => {
+    server.use(
+      http.get(`${API}/search/mentors`, () =>
+        ok({ mentors: [mentor] }, { page: 1, limit: 12, total: 1, totalPages: 1 }),
+      ),
+    );
+    const { router } = renderApp('/search?q=react', { user: me });
+    await waitFor(() => expect(router.state.location.pathname).toBe('/discover'));
+    expect(router.state.location.search).toBe('?q=react');
+    expect(await screen.findByRole('link', { name: 'Ethan Brooks' })).toBeInTheDocument();
   });
 
   it('searches, puts the query in the URL and shows mentor cards with a count', async () => {
@@ -115,14 +121,12 @@ describe('Search page (SB1/US50)', () => {
         return ok({ mentors: [mentor] }, { page: 1, limit: 12, total: 1, totalPages: 1, query });
       }),
     );
-    const { user, router } = renderApp('/search', { user: me });
+    const { user, router } = renderApp('/discover', { user: me });
     await user.type(await screen.findByLabelText(/skill to search for/i), 'React');
     await user.click(screen.getByRole('button', { name: 'Search' }));
 
     expect(await screen.findByRole('link', { name: 'Ethan Brooks' })).toHaveAttribute('href', '/users/u9');
-    expect(screen.getByText(/mentor teaches skills matching/i)).toHaveTextContent(
-      '1 mentor teaches skills matching “React”',
-    );
+    expect(screen.getByTestId('result-count')).toHaveTextContent('1 mentor for “React”');
     expect(router.state.location.search).toBe('?q=React');
     expect(query).toBe('React');
     expect(screen.getByText(/also teaches node\.js/i)).toBeInTheDocument();
@@ -132,11 +136,11 @@ describe('Search page (SB1/US50)', () => {
     server.use(
       http.get(`${API}/search/mentors`, () => ok({ mentors: [] }, { page: 1, limit: 12, total: 0, totalPages: 1 })),
     );
-    renderApp('/search?q=underwater%20basket', { user: me });
+    renderApp('/discover?q=underwater%20basket', { user: me });
     expect(await screen.findByText('No mentors found for “underwater basket”')).toBeInTheDocument();
   });
 
-  it('the top-bar search box opens the search page (SB1/US39)', async () => {
+  it('the top-bar search box opens the Discover page (SB1/US39)', async () => {
     server.use(
       http.get(`${API}/dashboard`, () => ok(emptyDashboard(me))),
       http.get(`${API}/search/mentors`, () =>
@@ -146,7 +150,7 @@ describe('Search page (SB1/US50)', () => {
     const { user, router } = renderApp('/dashboard', { user: me });
     const box = await screen.findByLabelText('Search skills or mentors');
     await user.type(box, 'react{Enter}');
-    await waitFor(() => expect(router.state.location.pathname).toBe('/search'));
+    await waitFor(() => expect(router.state.location.pathname).toBe('/discover'));
     expect(await screen.findByRole('link', { name: 'Ethan Brooks' })).toBeInTheDocument();
   });
 });

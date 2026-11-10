@@ -112,7 +112,7 @@ export function PublicProfilePage() {
   const isMe = user?.id === id;
   return (
     <>
-      <PageHeader title={data?.profile?.name ?? 'Member profile'} backTo="/search" backLabel="Back to search" />
+      <PageHeader title={data?.profile?.name ?? 'Member profile'} backTo="/discover" backLabel="Back to discovery" />
       {isMe ? (
         <Alert tone="info" title="This is your own profile">
           <Button variant="link" to="/profile/edit">
@@ -127,7 +127,7 @@ export function PublicProfilePage() {
             icon={UserX}
             title="Profile not available"
             description="This member may have deactivated or deleted their account."
-            action={<Button to="/search">Find other mentors</Button>}
+            action={<Button to="/discover">Find other mentors</Button>}
           />
         ) : error ? (
           <ErrorState message={error.message} onRetry={reload} />

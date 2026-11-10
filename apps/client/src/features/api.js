@@ -32,6 +32,8 @@ export const skillsApi = {
   add: (kind, body) => request(api.post(`/users/me/${kind}-skills`, body)),
   update: (kind, entryId, body) => request(api.patch(`/users/me/${kind}-skills/${entryId}`, body)),
   remove: (kind, entryId) => request(api.delete(`/users/me/${kind}-skills/${entryId}`)),
+  suggest: (params) => request(api.get('/skills/suggest', { params })),
+  related: (id) => request(api.get(`/skills/${id}/related`)),
 };
 
 export const availabilityApi = {

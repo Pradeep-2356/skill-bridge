@@ -23,7 +23,7 @@ import styles from './AppLayout.module.css';
 /** Main navigation (SB1/US39). Admin appears only for admins (SB1/US47). */
 const NAV = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/search', label: 'Find mentors', icon: Search },
+  { to: '/discover', label: 'Find mentors', icon: Search },
   { to: '/sessions', label: 'Sessions', icon: CalendarClock },
   { to: '/profile', label: 'My profile', icon: UserRound },
   { to: '/skills', label: 'Skills', icon: Sparkles },
@@ -144,7 +144,7 @@ export function AppLayout() {
   function handleSearch(e) {
     e.preventDefault();
     const q = query.trim();
-    if (q) navigate(`/search?q=${encodeURIComponent(q)}`);
+    if (q) navigate(`/discover?q=${encodeURIComponent(q)}`);
   }
 
   return (
