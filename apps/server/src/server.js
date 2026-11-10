@@ -41,6 +41,9 @@ async function main() {
     server = http.createServer(app);
   }
 
+  // Background matching worker and 60-second expiry job (SB2/US44, US49).
+  app.locals.runtime.worker.start();
+
   server.listen(config.PORT, () => {
     const scheme = config.HTTPS ? 'https' : 'http';
     logger.info(`SkillBridge API listening on ${scheme}://localhost:${config.PORT}`);
@@ -50,6 +53,7 @@ async function main() {
 
   const shutdown = async (signal) => {
     logger.info(`${signal} received, shutting down…`);
+    app.locals.runtime.worker.stop();
     server.close();
     await disconnectDatabase();
     process.exit(0);

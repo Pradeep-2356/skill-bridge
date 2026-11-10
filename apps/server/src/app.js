@@ -14,6 +14,10 @@ import { setRuntime } from './config/runtime.js';
 import { createMailer } from './integrations/mail/index.js';
 import { createLocalDiskStorage } from './integrations/storage/localDiskStorage.js';
 import { buildApiRouter } from './routes/index.js';
+import { createLocalQueue } from './integrations/queue/localQueue.js';
+import { createMatchWorker } from './workers/matchWorker.js';
+import { processRequest, onDeadMessage } from './services/matching/matchingService.js';
+import { expireStaleRequests, QUEUE_NAME } from './services/requestService.js';
 import { originCheck } from './middleware/originCheck.js';
 import { requestLogger } from './middleware/requestLogger.js';
 import { errorHandler, notFound } from './middleware/errorHandler.js';
@@ -22,11 +26,27 @@ import { sendSuccess } from './utils/respond.js';
 export function createApp(config, overrides = {}) {
   const mailer = overrides.mailer ?? createMailer(config);
   const storage = overrides.storage ?? createLocalDiskStorage({ rootDir: config.uploadDir, publicPath: '/uploads' });
-  setRuntime({ config, mailer, storage });
+  // SB2/US48–50: local queue + worker that copy the SQS/Lambda design without AWS.
+  const queue =
+    overrides.queue ??
+    createLocalQueue({
+      visibilitySeconds: config.QUEUE_VISIBILITY_SECONDS,
+      maxReceives: config.QUEUE_MAX_RECEIVES,
+      onDead: onDeadMessage,
+    });
+  const worker = createMatchWorker({
+    queue,
+    queueName: QUEUE_NAME,
+    processMessage: (body, now) => processRequest(body.requestId, now),
+    expire: () => expireStaleRequests(),
+    intervalMs: config.MATCH_WORKER_INTERVAL_MS,
+    expiryIntervalMs: config.EXPIRY_JOB_INTERVAL_MS,
+  });
+  setRuntime({ config, mailer, storage, queue, worker });
 
   const app = express();
   app.disable('x-powered-by');
-  app.locals.runtime = { config, mailer, storage };
+  app.locals.runtime = { config, mailer, storage, queue, worker };
 
   // 1. Security headers. HSTS only when the app is really served over HTTPS (SB1/US45).
   app.use(

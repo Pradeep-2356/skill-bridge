@@ -44,6 +44,13 @@ const envSchema = z.object({
   SERVE_CLIENT: bool(false),
   ENABLE_TEST_ROUTES: bool(false),
   LOG_REQUESTS: bool(true),
+  // Sprint 2 – local matching queue and background jobs (SB2/US44, US48–50)
+  MATCH_WORKER_INTERVAL_MS: z.coerce.number().int().min(0).max(60_000).default(1000),
+  EXPIRY_JOB_INTERVAL_MS: z.coerce.number().int().min(0).max(3_600_000).default(60_000),
+  QUEUE_VISIBILITY_SECONDS: z.coerce.number().int().min(1).max(600).default(30),
+  QUEUE_MAX_RECEIVES: z.coerce.number().int().min(1).max(10).default(3),
+  /** Demo switch: share of matching attempts that fail on purpose so Retry can be shown (0 = never). */
+  MATCH_FAILURE_RATE: z.coerce.number().min(0).max(1).default(0),
 });
 
 /** Pure builder so tests can create a config without touching process.env. */

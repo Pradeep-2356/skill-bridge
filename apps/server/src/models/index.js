@@ -4,3 +4,6 @@ export { Skill } from './Skill.js';
 export { RefreshToken } from './RefreshToken.js';
 export { PasswordReset } from './PasswordReset.js';
 export { Session } from './Session.js';
+export { MatchRequest } from './MatchRequest.js';
+export { Notification } from './Notification.js';
+export { QueueMessage } from './QueueMessage.js';

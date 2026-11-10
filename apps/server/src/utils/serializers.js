@@ -74,6 +74,7 @@ export function toPrivateUser(user) {
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
     lastLoginAt: user.lastLoginAt ?? null,
+    acceptingRequests: user.acceptingRequests !== false,
   };
 }
 
